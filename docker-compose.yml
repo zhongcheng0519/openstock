@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  # PostgreSQL 数据库
+  db:
+    image: postgres:15-alpine
+    container_name: openstock-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-openstock}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-openstock_secret}
+      POSTGRES_DB: ${DB_NAME:-openstock}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-openstock} -d ${DB_NAME:-openstock}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - openstock-network
+
+  # 后端服务
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: openstock-backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${DB_USER:-openstock}:${DB_PASSWORD:-openstock_secret}@db:5432/${DB_NAME:-openstock}
+      TUSHARE_TOKEN: ${TUSHARE_TOKEN}
+      APP_HOST: 0.0.0.0
+      APP_PORT: 8000
+      DEBUG: "false"
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:-openstock}
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - openstock-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # 前端服务
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: openstock-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-80}:80"
+    depends_on:
+      - backend
+    networks:
+      - openstock-network
+
+volumes:
+  postgres_data:
+    name: openstock_postgres_data
+
+networks:
+  openstock-network:
+    name: openstock_network
+    driver: bridge
