@@ -10,7 +10,6 @@ export const apiClient = axios.create({
   timeout: 30000,
 })
 
-// 响应拦截器
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -21,6 +20,20 @@ apiClient.interceptors.response.use(
     return Promise.reject(error)
   }
 )
+
+export interface StockFilterRequest {
+  trade_date: string
+  min_pct?: number
+  max_pct?: number
+  min_circ_mv?: number
+  max_circ_mv?: number | null
+  min_pe?: number
+  max_pe?: number
+  min_turnover_rate?: number
+  max_turnover_rate?: number | null
+  min_net_mf_amount?: number | null
+  mf_top_n?: number
+}
 
 export interface PctFilterRequest {
   trade_date: string
@@ -42,6 +55,17 @@ export interface DailyQuote {
   pct_chg: number | null
   vol: number | null
   amount: number | null
+  circ_mv: number | null
+  pe: number | null
+  turnover_rate: number | null
+  net_mf_amount: number | null
+  net_mf_vol: number | null
+}
+
+export interface StockFilterResponse {
+  trade_date: string
+  count: number
+  data: DailyQuote[]
 }
 
 export interface PctFilterResponse {
@@ -56,15 +80,15 @@ export interface SyncStatusResponse {
 }
 
 export const strategyApi = {
-  // 涨跌幅筛选
+  stockFilter: (params: StockFilterRequest) =>
+    apiClient.post<StockFilterResponse>('/api/v1/strategy/filter', params),
+
   pctFilter: (params: PctFilterRequest) =>
     apiClient.post<PctFilterResponse>('/api/v1/strategy/pct-filter', params),
 
-  // 同步股票基础信息
   syncStocks: () =>
     apiClient.post<SyncStatusResponse>('/api/v1/strategy/sync-stocks'),
 
-  // 同步日线行情
   syncDaily: (tradeDate: string) =>
     apiClient.post<SyncStatusResponse>(`/api/v1/strategy/sync-daily/${tradeDate}`),
 }

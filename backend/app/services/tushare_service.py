@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, insert
 
 from app.core.config import get_settings
-from app.models.stock import Stock, DailyQuote
+from app.models.stock import Stock, DailyQuote, DailyBasic, Moneyflow
 
 settings = get_settings()
 
@@ -122,6 +122,132 @@ class TushareService:
         """检查指定日期的数据是否已存在"""
         result = await db.execute(
             select(DailyQuote).where(DailyQuote.trade_date == trade_date).limit(1)
+        )
+        return result.scalar_one_or_none() is not None
+    
+    async def sync_daily_basic(self, db: AsyncSession, trade_date: date) -> int:
+        """同步指定日期的每日基本面指标
+        
+        Args:
+            db: 数据库会话
+            trade_date: 交易日期
+            
+        Returns:
+            同步的记录数量
+        """
+        date_str = trade_date.strftime('%Y%m%d')
+        
+        df = self.pro.daily_basic(trade_date=date_str)
+        
+        if df is None or df.empty:
+            return 0
+        
+        result = await db.execute(
+            select(DailyBasic).where(DailyBasic.trade_date == trade_date).limit(1)
+        )
+        if result.scalar_one_or_none():
+            await db.execute(
+                DailyBasic.__table__.delete().where(DailyBasic.trade_date == trade_date)
+            )
+        
+        basics_data = []
+        for _, row in df.iterrows():
+            basic = {
+                'ts_code': row['ts_code'],
+                'trade_date': trade_date,
+                'close': float(row['close']) if pd.notna(row.get('close')) else None,
+                'turnover_rate': float(row['turnover_rate']) if pd.notna(row.get('turnover_rate')) else None,
+                'turnover_rate_f': float(row['turnover_rate_f']) if pd.notna(row.get('turnover_rate_f')) else None,
+                'volume_ratio': float(row['volume_ratio']) if pd.notna(row.get('volume_ratio')) else None,
+                'pe': float(row['pe']) if pd.notna(row.get('pe')) else None,
+                'pe_ttm': float(row['pe_ttm']) if pd.notna(row.get('pe_ttm')) else None,
+                'pb': float(row['pb']) if pd.notna(row.get('pb')) else None,
+                'ps': float(row['ps']) if pd.notna(row.get('ps')) else None,
+                'ps_ttm': float(row['ps_ttm']) if pd.notna(row.get('ps_ttm')) else None,
+                'dv_ratio': float(row['dv_ratio']) if pd.notna(row.get('dv_ratio')) else None,
+                'dv_ttm': float(row['dv_ttm']) if pd.notna(row.get('dv_ttm')) else None,
+                'total_share': float(row['total_share']) if pd.notna(row.get('total_share')) else None,
+                'float_share': float(row['float_share']) if pd.notna(row.get('float_share')) else None,
+                'free_share': float(row['free_share']) if pd.notna(row.get('free_share')) else None,
+                'total_mv': float(row['total_mv']) if pd.notna(row.get('total_mv')) else None,
+                'circ_mv': float(row['circ_mv']) if pd.notna(row.get('circ_mv')) else None,
+            }
+            basics_data.append(basic)
+        
+        if basics_data:
+            await db.execute(insert(DailyBasic), basics_data)
+            await db.commit()
+        
+        return len(basics_data)
+    
+    async def check_basic_data_exists(self, db: AsyncSession, trade_date: date) -> bool:
+        """检查指定日期的基本面数据是否已存在"""
+        result = await db.execute(
+            select(DailyBasic).where(DailyBasic.trade_date == trade_date).limit(1)
+        )
+        return result.scalar_one_or_none() is not None
+    
+    async def sync_moneyflow(self, db: AsyncSession, trade_date: date) -> int:
+        """同步指定日期的个股资金流向数据
+        
+        Args:
+            db: 数据库会话
+            trade_date: 交易日期
+            
+        Returns:
+            同步的记录数量
+        """
+        date_str = trade_date.strftime('%Y%m%d')
+        
+        df = self.pro.moneyflow(trade_date=date_str)
+        
+        if df is None or df.empty:
+            return 0
+        
+        result = await db.execute(
+            select(Moneyflow).where(Moneyflow.trade_date == trade_date).limit(1)
+        )
+        if result.scalar_one_or_none():
+            await db.execute(
+                Moneyflow.__table__.delete().where(Moneyflow.trade_date == trade_date)
+            )
+        
+        moneyflow_data = []
+        for _, row in df.iterrows():
+            mf = {
+                'ts_code': row['ts_code'],
+                'trade_date': trade_date,
+                'buy_sm_vol': float(row['buy_sm_vol']) if pd.notna(row.get('buy_sm_vol')) else None,
+                'buy_sm_amount': float(row['buy_sm_amount']) if pd.notna(row.get('buy_sm_amount')) else None,
+                'sell_sm_vol': float(row['sell_sm_vol']) if pd.notna(row.get('sell_sm_vol')) else None,
+                'sell_sm_amount': float(row['sell_sm_amount']) if pd.notna(row.get('sell_sm_amount')) else None,
+                'buy_md_vol': float(row['buy_md_vol']) if pd.notna(row.get('buy_md_vol')) else None,
+                'buy_md_amount': float(row['buy_md_amount']) if pd.notna(row.get('buy_md_amount')) else None,
+                'sell_md_vol': float(row['sell_md_vol']) if pd.notna(row.get('sell_md_vol')) else None,
+                'sell_md_amount': float(row['sell_md_amount']) if pd.notna(row.get('sell_md_amount')) else None,
+                'buy_lg_vol': float(row['buy_lg_vol']) if pd.notna(row.get('buy_lg_vol')) else None,
+                'buy_lg_amount': float(row['buy_lg_amount']) if pd.notna(row.get('buy_lg_amount')) else None,
+                'sell_lg_vol': float(row['sell_lg_vol']) if pd.notna(row.get('sell_lg_vol')) else None,
+                'sell_lg_amount': float(row['sell_lg_amount']) if pd.notna(row.get('sell_lg_amount')) else None,
+                'buy_elg_vol': float(row['buy_elg_vol']) if pd.notna(row.get('buy_elg_vol')) else None,
+                'buy_elg_amount': float(row['buy_elg_amount']) if pd.notna(row.get('buy_elg_amount')) else None,
+                'sell_elg_vol': float(row['sell_elg_vol']) if pd.notna(row.get('sell_elg_vol')) else None,
+                'sell_elg_amount': float(row['sell_elg_amount']) if pd.notna(row.get('sell_elg_amount')) else None,
+                'net_mf_vol': float(row['net_mf_vol']) if pd.notna(row.get('net_mf_vol')) else None,
+                'net_mf_amount': float(row['net_mf_amount']) if pd.notna(row.get('net_mf_amount')) else None,
+            }
+            moneyflow_data.append(mf)
+        
+        if moneyflow_data:
+            await db.execute(insert(Moneyflow), moneyflow_data)
+            await db.commit()
+        
+        return len(moneyflow_data)
+    
+    async def check_moneyflow_data_exists(self, db: AsyncSession, trade_date: date) -> bool:
+        """检查指定日期的资金流向数据是否已存在"""
+        result = await db.execute(
+            select(Moneyflow).where(Moneyflow.trade_date == trade_date).limit(1)
         )
         return result.scalar_one_or_none() is not None
 

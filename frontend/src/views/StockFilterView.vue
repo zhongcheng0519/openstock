@@ -26,8 +26,10 @@
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       <!-- 筛选条件卡片 -->
       <div class="bg-white rounded-lg shadow p-6 mb-6">
-        <h2 class="text-lg font-semibold text-gray-800 mb-4">涨跌幅筛选</h2>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">多条件筛选</h2>
+        
+        <!-- 第一行：日期和涨跌幅 -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">交易日期</label>
             <el-date-picker
@@ -60,6 +62,102 @@
             />
           </div>
         </div>
+        
+        <!-- 第二行：流通市值 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">最小流通市值 (亿元)</label>
+            <el-input-number
+              v-model="filterForm.min_circ_mv_yi"
+              :min="0"
+              :max="100000"
+              :step="10"
+              class="w-full"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">最大流通市值 (亿元)</label>
+            <el-input-number
+              v-model="filterForm.max_circ_mv_yi"
+              :min="0"
+              :max="100000"
+              :step="10"
+              :placeholder="'不限制'"
+              class="w-full"
+            />
+          </div>
+        </div>
+        
+        <!-- 第三行：市盈率和换手率 -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">最小市盈率</label>
+            <el-input-number
+              v-model="filterForm.min_pe"
+              :min="0"
+              :max="1000"
+              :step="1"
+              class="w-full"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">最大市盈率</label>
+            <el-input-number
+              v-model="filterForm.max_pe"
+              :min="0"
+              :max="1000"
+              :step="1"
+              class="w-full"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">最小换手率 (%)</label>
+            <el-input-number
+              v-model="filterForm.min_turnover_rate"
+              :min="0"
+              :max="100"
+              :step="0.5"
+              class="w-full"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">最大换手率 (%)</label>
+            <el-input-number
+              v-model="filterForm.max_turnover_rate"
+              :min="0"
+              :max="100"
+              :step="0.5"
+              :placeholder="'不限制'"
+              class="w-full"
+            />
+          </div>
+        </div>
+        
+        <!-- 第四行：资金流向筛选 -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">最小净流入额 (万元)</label>
+            <el-input-number
+              v-model="filterForm.min_net_mf_amount"
+              :min="-1000000"
+              :max="1000000"
+              :step="1000"
+              :placeholder="'不限制'"
+              class="w-full"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">返回数量 (按净流入额排名)</label>
+            <el-select v-model="filterForm.mf_top_n" class="w-full">
+              <el-option :value="10" label="前 10 只" />
+              <el-option :value="20" label="前 20 只" />
+              <el-option :value="30" label="前 30 只 (默认)" />
+              <el-option :value="50" label="前 50 只" />
+              <el-option :value="100" label="前 100 只" />
+            </el-select>
+          </div>
+        </div>
+        
         <div class="mt-4 flex justify-end">
           <el-button
             type="primary"
@@ -100,41 +198,41 @@
                 {{ formatNumber(row.close) }}
               </template>
             </el-table-column>
-            <el-table-column prop="pct_chg" label="涨跌幅" width="120" sortable>
+            <el-table-column prop="pct_chg" label="涨跌幅" width="100" sortable>
               <template #default="{ row }">
                 <span :class="getPctColor(row.pct_chg)">
                   {{ formatPct(row.pct_chg) }}
                 </span>
               </template>
             </el-table-column>
-            <el-table-column prop="change" label="涨跌额" width="100">
+            <el-table-column prop="circ_mv" label="流通市值(亿)" width="120" sortable>
               <template #default="{ row }">
-                <span :class="getPctColor(row.change)">
-                  {{ formatNumber(row.change) }}
+                {{ formatMV(row.circ_mv) }}
+              </template>
+            </el-table-column>
+            <el-table-column prop="pe" label="市盈率" width="100" sortable>
+              <template #default="{ row }">
+                {{ formatNumber(row.pe) }}
+              </template>
+            </el-table-column>
+            <el-table-column prop="turnover_rate" label="换手率(%)" width="100" sortable>
+              <template #default="{ row }">
+                {{ formatNumber(row.turnover_rate) }}
+              </template>
+            </el-table-column>
+            <el-table-column prop="net_mf_amount" label="净流入额(万)" width="120" sortable>
+              <template #default="{ row }">
+                <span :class="getMfColor(row.net_mf_amount)">
+                  {{ formatMfAmount(row.net_mf_amount) }}
                 </span>
               </template>
             </el-table-column>
-            <el-table-column prop="open" label="开盘价" width="100">
-              <template #default="{ row }">
-                {{ formatNumber(row.open) }}
-              </template>
-            </el-table-column>
-            <el-table-column prop="high" label="最高价" width="100">
-              <template #default="{ row }">
-                {{ formatNumber(row.high) }}
-              </template>
-            </el-table-column>
-            <el-table-column prop="low" label="最低价" width="100">
-              <template #default="{ row }">
-                {{ formatNumber(row.low) }}
-              </template>
-            </el-table-column>
-            <el-table-column prop="vol" label="成交量(手)" width="150">
+            <el-table-column prop="vol" label="成交量(手)" width="120">
               <template #default="{ row }">
                 {{ formatVolume(row.vol) }}
               </template>
             </el-table-column>
-            <el-table-column prop="amount" label="成交额(千元)" width="150">
+            <el-table-column prop="amount" label="成交额(千元)" width="120">
               <template #default="{ row }">
                 {{ formatVolume(row.amount) }}
               </template>
@@ -167,6 +265,10 @@
             <!-- 展开详情 -->
             <div v-if="expandedItems.includes(item.ts_code)" class="mt-3 pt-3 border-t border-gray-100">
               <div class="grid grid-cols-2 gap-2 text-sm">
+                <div class="text-gray-500">流通市值: <span class="text-gray-900">{{ formatMV(item.circ_mv) }}亿</span></div>
+                <div class="text-gray-500">市盈率: <span class="text-gray-900">{{ formatNumber(item.pe) }}</span></div>
+                <div class="text-gray-500">换手率: <span class="text-gray-900">{{ formatNumber(item.turnover_rate) }}%</span></div>
+                <div class="text-gray-500">净流入额: <span :class="getMfColor(item.net_mf_amount)">{{ formatMfAmount(item.net_mf_amount) }}万</span></div>
                 <div class="text-gray-500">开盘价: <span class="text-gray-900">{{ formatNumber(item.open) }}</span></div>
                 <div class="text-gray-500">最高价: <span class="text-gray-900">{{ formatNumber(item.high) }}</span></div>
                 <div class="text-gray-500">最低价: <span class="text-gray-900">{{ formatNumber(item.low) }}</span></div>
@@ -202,8 +304,16 @@ const expandedItems = ref<string[]>([])
 
 const filterForm = reactive({
   trade_date: '',
-  min_pct: -2,
-  max_pct: 5,
+  min_pct: -100,
+  max_pct: 100,
+  min_circ_mv_yi: 50,
+  max_circ_mv_yi: null as number | null,
+  min_pe: 0,
+  max_pe: 50,
+  min_turnover_rate: 5,
+  max_turnover_rate: null as number | null,
+  min_net_mf_amount: null as number | null,
+  mf_top_n: 30,
 })
 
 const handleFilter = async () => {
@@ -216,10 +326,18 @@ const handleFilter = async () => {
   searched.value = true
 
   try {
-    const response = await strategyApi.pctFilter({
+    const response = await strategyApi.stockFilter({
       trade_date: filterForm.trade_date,
       min_pct: filterForm.min_pct,
       max_pct: filterForm.max_pct,
+      min_circ_mv: filterForm.min_circ_mv_yi * 10000,
+      max_circ_mv: filterForm.max_circ_mv_yi ? filterForm.max_circ_mv_yi * 10000 : null,
+      min_pe: filterForm.min_pe,
+      max_pe: filterForm.max_pe,
+      min_turnover_rate: filterForm.min_turnover_rate,
+      max_turnover_rate: filterForm.max_turnover_rate,
+      min_net_mf_amount: filterForm.min_net_mf_amount,
+      mf_top_n: filterForm.mf_top_n,
     })
     results.value = response.data.data
     currentTradeDate.value = response.data.trade_date
@@ -271,12 +389,30 @@ const getPctColor = (val: number | null) => {
   return 'text-gray-600'
 }
 
+const getMfColor = (val: number | null) => {
+  if (val === null || val === undefined) return 'text-gray-500'
+  if (val > 0) return 'text-red-600'
+  if (val < 0) return 'text-green-600'
+  return 'text-gray-600'
+}
+
+const formatMfAmount = (val: number | null) => {
+  if (val === null || val === undefined) return '-'
+  const prefix = val > 0 ? '+' : ''
+  return `${prefix}${val.toFixed(2)}`
+}
+
 const formatVolume = (val: number | null) => {
   if (val === null || val === undefined) return '-'
   if (val >= 10000) {
     return (val / 10000).toFixed(2) + '万'
   }
   return val.toFixed(0)
+}
+
+const formatMV = (val: number | null) => {
+  if (val === null || val === undefined) return '-'
+  return (val / 10000).toFixed(2)
 }
 
 const formatDate = (dateStr: string) => {

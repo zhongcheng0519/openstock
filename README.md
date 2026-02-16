@@ -199,14 +199,47 @@ make update            # 更新部署
 - 自动按需同步指定日期的日线行情
 - 支持开盘价、最高价、最低价、收盘价、成交量等字段
 
-### 3. 涨跌幅筛选
-- 支持按日期和涨跌幅范围筛选股票
+### 3. 每日基本面指标
+- 自动按需同步指定日期的基本面指标
+- 包括流通市值、市盈率、换手率、量比等
+
+### 4. 多条件股票筛选
+- 支持按日期、涨跌幅、流通市值、市盈率、换手率等多条件筛选
+- 所有条件之间为且(AND)关系
 - 桌面端表格展示，移动端卡片展示
 - 自动数据同步，无需手动导入
 
+### 5. 资金流向数据
+- 自动按需同步指定日期的个股资金流向
+- 包括小单、中单、大单、特大单的买卖量和金额
+- 支持按净流入额筛选和排序
+- 默认返回净流入额排名前30的股票
+
 ## API 接口
 
-### 股票筛选
+### 多条件股票筛选
+```
+POST /api/v1/strategy/filter
+Content-Type: application/json
+
+{
+  "trade_date": "20231027",
+  "min_pct": -100.0,
+  "max_pct": 100.0,
+  "min_circ_mv": 500000.0,
+  "max_circ_mv": null,
+  "min_pe": 0.0,
+  "max_pe": 50.0,
+  "min_turnover_rate": 5.0,
+  "max_turnover_rate": null,
+  "min_net_mf_amount": null,
+  "mf_top_n": 30
+}
+```
+
+筛选结果按净流入额降序排序，返回前 `mf_top_n` 条记录。
+
+### 涨跌幅筛选（兼容旧接口）
 ```
 POST /api/v1/strategy/pct-filter
 Content-Type: application/json
@@ -254,6 +287,45 @@ POST /api/v1/strategy/sync-daily/{trade_date}
 | vol | NUMERIC(18,4) | 成交量 |
 | amount | NUMERIC(18,4) | 成交额 |
 
+### daily_basic 表 - 每日基本面指标
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | BIGINT | 主键(自增) |
+| ts_code | VARCHAR(20) | 股票代码 |
+| trade_date | DATE | 交易日期 |
+| close | NUMERIC(12,4) | 当日收盘价 |
+| turnover_rate | NUMERIC(8,4) | 换手率(%) |
+| volume_ratio | NUMERIC(8,4) | 量比 |
+| pe | NUMERIC(12,4) | 市盈率 |
+| pb | NUMERIC(12,4) | 市净率 |
+| circ_mv | NUMERIC(20,4) | 流通市值(万元) |
+| total_mv | NUMERIC(20,4) | 总市值(万元) |
+
+### moneyflow 表 - 个股资金流向
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | BIGINT | 主键(自增) |
+| ts_code | VARCHAR(20) | 股票代码 |
+| trade_date | DATE | 交易日期 |
+| buy_sm_vol | NUMERIC(18,4) | 小单买入量(手) |
+| buy_sm_amount | NUMERIC(18,4) | 小单买入金额(万元) |
+| sell_sm_vol | NUMERIC(18,4) | 小单卖出量(手) |
+| sell_sm_amount | NUMERIC(18,4) | 小单卖出金额(万元) |
+| buy_md_vol | NUMERIC(18,4) | 中单买入量(手) |
+| buy_md_amount | NUMERIC(18,4) | 中单买入金额(万元) |
+| sell_md_vol | NUMERIC(18,4) | 中单卖出量(手) |
+| sell_md_amount | NUMERIC(18,4) | 中单卖出金额(万元) |
+| buy_lg_vol | NUMERIC(18,4) | 大单买入量(手) |
+| buy_lg_amount | NUMERIC(18,4) | 大单买入金额(万元) |
+| sell_lg_vol | NUMERIC(18,4) | 大单卖出量(手) |
+| sell_lg_amount | NUMERIC(18,4) | 大单卖出金额(万元) |
+| buy_elg_vol | NUMERIC(18,4) | 特大单买入量(手) |
+| buy_elg_amount | NUMERIC(18,4) | 特大单买入金额(万元) |
+| sell_elg_vol | NUMERIC(18,4) | 特大单卖出量(手) |
+| sell_elg_amount | NUMERIC(18,4) | 特大单卖出金额(万元) |
+| net_mf_vol | NUMERIC(18,4) | 净流入量(手) |
+| net_mf_amount | NUMERIC(18,4) | 净流入额(万元) |
+
 ## 开发计划
 
 - [x] 项目基础架构
@@ -261,6 +333,8 @@ POST /api/v1/strategy/sync-daily/{trade_date}
 - [x] Tushare 数据同步
 - [x] 涨跌幅筛选 API
 - [x] 前端页面实现
+- [x] 多条件筛选策略（流通市值、市盈率、换手率）
+- [x] 资金流向筛选策略（净流入额排名）
 - [ ] 更多筛选策略
 - [ ] 数据可视化图表
 - [ ] 用户认证系统
