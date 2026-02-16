@@ -1,26 +1,48 @@
 <template>
   <div class="min-h-screen bg-gray-50">
-    <!-- 头部 -->
-    <header class="bg-white shadow-sm border-b">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-3">
-            <el-icon class="text-blue-600 text-2xl"><TrendCharts /></el-icon>
-            <h1 class="text-xl font-bold text-gray-900">股票分析系统</h1>
+    <nav class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between h-16">
+          <div class="flex items-center">
+            <router-link to="/" class="flex items-center gap-3">
+              <div class="w-9 h-9 bg-gradient-to-br from-red-600 to-red-500 rounded-lg flex items-center justify-center">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                </svg>
+              </div>
+              <span class="text-xl font-bold text-gray-900">股票分析系统</span>
+            </router-link>
           </div>
+          
           <div class="flex items-center gap-4">
-            <el-button
-              type="primary"
-              :loading="syncingStocks"
-              @click="handleSyncStocks"
-            >
-              <el-icon class="mr-1"><Refresh /></el-icon>
-              同步股票列表
-            </el-button>
+            <router-link to="/" class="px-3 py-2 text-sm font-medium text-red-600 bg-red-50 rounded-lg">
+              股票筛选
+            </router-link>
+            <router-link to="/profile" class="px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
+              个人中心
+            </router-link>
+            <template v-if="isAdmin">
+              <router-link to="/users" class="px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
+                用户管理
+              </router-link>
+              <router-link to="/logs" class="px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
+                操作日志
+              </router-link>
+            </template>
+            
+            <div class="flex items-center gap-3 pl-4 border-l border-gray-200">
+              <div class="w-8 h-8 bg-gradient-to-br from-red-600 to-red-500 rounded-full flex items-center justify-center text-white font-medium text-sm">
+                {{ userInitial }}
+              </div>
+              <span class="text-sm font-medium text-gray-900">{{ userName }}</span>
+              <button @click="handleLogout" class="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                退出
+              </button>
+            </div>
           </div>
         </div>
       </div>
-    </header>
+    </nav>
 
     <!-- 主内容区 -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -291,9 +313,25 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { reactive, ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { strategyApi, type DailyQuote } from '@/api/client'
+import { useAuthStore } from '@/stores/auth'
+
+const router = useRouter()
+const authStore = useAuthStore()
+
+const isAdmin = computed(() => authStore.isAdmin)
+const userInitial = computed(() => authStore.userInitial)
+const userName = computed(() => authStore.user?.nickname || '')
+
+const handleLogout = async () => {
+  if (confirm('确定要退出登录吗？')) {
+    await authStore.logout()
+    router.push('/login')
+  }
+}
 
 const loading = ref(false)
 const syncingStocks = ref(false)

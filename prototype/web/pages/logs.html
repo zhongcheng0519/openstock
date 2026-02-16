@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>操作日志 - 股票分析系统</title>
+  <link rel="stylesheet" href="../assets/css/common.css">
+  <style>
+    body {
+      background: var(--gray-50);
+    }
+    
+    .navbar {
+      background: white;
+      border-bottom: 1px solid var(--gray-200);
+      box-shadow: var(--shadow-sm);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    
+    .navbar-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+    }
+    
+    .navbar-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--gray-900);
+      text-decoration: none;
+    }
+    
+    .navbar-logo {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      border-radius: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+    
+    .navbar-logo svg {
+      width: 20px;
+      height: 20px;
+    }
+    
+    .navbar-menu {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .navbar-link {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--gray-700);
+      text-decoration: none;
+      border-radius: 0.5rem;
+      transition: var(--transition);
+    }
+    
+    .navbar-link:hover {
+      background: var(--gray-100);
+      color: var(--gray-900);
+    }
+    
+    .navbar-link.active {
+      background: var(--primary-lighter);
+      color: var(--primary);
+    }
+    
+    .navbar-link svg {
+      width: 18px;
+      height: 18px;
+    }
+    
+    .navbar-user {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-left: 1rem;
+      padding-left: 1rem;
+      border-left: 1px solid var(--gray-200);
+    }
+    
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .user-avatar {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 600;
+      font-size: 0.875rem;
+    }
+    
+    .user-name {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--gray-900);
+    }
+    
+    .main-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
+    
+    .page-header {
+      margin-bottom: 2rem;
+    }
+    
+    .page-title {
+      font-size: 1.875rem;
+      font-weight: 700;
+      color: var(--gray-900);
+      margin-bottom: 0.5rem;
+    }
+    
+    .page-subtitle {
+      font-size: 0.9375rem;
+      color: var(--gray-600);
+    }
+    
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    
+    .stat-card {
+      background: white;
+      border-radius: 0.75rem;
+      padding: 1.5rem;
+      box-shadow: var(--shadow);
+    }
+    
+    .stat-label {
+      font-size: 0.875rem;
+      color: var(--gray-600);
+      margin-bottom: 0.5rem;
+    }
+    
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--gray-900);
+    }
+    
+    .filter-card {
+      background: white;
+      border-radius: 0.75rem;
+      box-shadow: var(--shadow);
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    
+    .filter-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+    
+    .filter-actions {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+    
+    .log-code {
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 0.8125rem;
+      color: var(--gray-700);
+    }
+    
+    @media (max-width: 768px) {
+      .navbar-menu {
+        display: none;
+      }
+      
+      .navbar-user .user-name {
+        display: none;
+      }
+      
+      .filter-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .filter-actions {
+        flex-direction: column;
+      }
+      
+      .filter-actions .btn {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="navbar-content">
+      <a href="filter.html" class="navbar-brand">
+        <div class="navbar-logo">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+          </svg>
+        </div>
+        <span>股票分析系统</span>
+      </a>
+      
+      <div class="navbar-menu">
+        <a href="filter.html" class="navbar-link">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
+          </svg>
+          股票筛选
+        </a>
+        <a href="profile.html" class="navbar-link">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+          </svg>
+          个人中心
+        </a>
+        <a href="users.html" class="navbar-link">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+          </svg>
+          用户管理
+        </a>
+        <a href="logs.html" class="navbar-link active">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+          </svg>
+          操作日志
+        </a>
+      </div>
+      
+      <div class="navbar-user">
+        <div class="user-info">
+          <div class="user-avatar" id="userAvatar">A</div>
+          <span class="user-name" id="userName">管理员</span>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="handleLogout()">
+          <svg style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+          </svg>
+          退出
+        </button>
+      </div>
+    </div>
+  </nav>
+  
+  <div class="main-container">
+    <div class="page-header">
+      <h1 class="page-title">操作日志</h1>
+      <p class="page-subtitle">查看系统操作记录和统计信息</p>
+    </div>
+    
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">总请求数</div>
+        <div class="stat-value">2,847</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">今日请求</div>
+        <div class="stat-value">156</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">活跃用户</div>
+        <div class="stat-value">8</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">错误率</div>
+        <div class="stat-value">0.3%</div>
+      </div>
+    </div>
+    
+    <div class="filter-card">
+      <form id="filterForm">
+        <div class="filter-grid">
+          <div class="form-group">
+            <label class="label">用户</label>
+            <select name="user" class="select">
+              <option value="">全部用户</option>
+              <option value="1">admin</option>
+              <option value="2">zhangsan</option>
+              <option value="3">lisi</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label class="label">操作类型</label>
+            <select name="action" class="select">
+              <option value="">全部操作</option>
+              <option value="login">登录</option>
+              <option value="logout">登出</option>
+              <option value="filter">股票筛选</option>
+              <option value="export">数据导出</option>
+              <option value="user_create">创建用户</option>
+              <option value="user_update">更新用户</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label class="label">开始时间</label>
+            <input type="date" name="startDate" class="input">
+          </div>
+          
+          <div class="form-group">
+            <label class="label">结束时间</label>
+            <input type="date" name="endDate" class="input">
+          </div>
+        </div>
+        
+<div class="filter-actions">
+          <button type="submit" class="btn btn-primary">
+            <svg style="width: 18px; height: 18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            </svg>
+            查询
+          </button>
+          <button type="button" class="btn btn-secondary" onclick="resetFilter()">
+            <svg style="width: 18px; height: 18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+            </svg>
+            重置
+          </button>
+        </div>
+      </form>
+    </div>
+    
+    <div class="table-container">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>用户</th>
+            <th>操作类型</th>
+            <th>API 路径</th>
+            <th>IP 地址</th>
+            <th>状态码</th>
+            <th>操作时间</th>
+          </tr>
+        </thead>
+        <tbody id="logTableBody">
+          <!-- 数据将通过 JS 渲染 -->
+        </tbody>
+      </table>
+    </div>
+    
+    <div class="pagination">
+      <button disabled>上一页</button>
+      <button class="active">1</button>
+      <button>2</button>
+      <button>3</button>
+      <button>下一页</button>
+    </div>
+  </div>
+  
+  <script src="../assets/js/common.js"></script>
+  <script>
+    // 权限检查
+    Auth.checkAdminAuth();
+    
+    // 显示用户信息
+    const currentUser = Auth.getUser();
+    if (currentUser) {
+      document.getElementById('userName').textContent = currentUser.nickname;
+      document.getElementById('userAvatar').textContent = currentUser.nickname.charAt(0).toUpperCase();
+    }
+    
+    // 模拟日志数据
+    const mockLogs = [
+      {
+        id: 245,
+        user: 'admin',
+        action: '股票筛选',
+        path: '/api/v1/strategy/filter',
+        ip: '192.168.1.100',
+        status: 200,
+        timestamp: '2024-02-20 14:35:22'
+      },
+      {
+        id: 244,
+        user: 'zhangsan',
+        action: '登录',
+        path: '/api/v1/auth/login',
+        ip: '192.168.1.101',
+        status: 200,
+        timestamp: '2024-02-20 14:30:15'
+      },
+      {
+        id: 243,
+        user: 'admin',
+        action: '创建用户',
+        path: '/api/v1/admin/users',
+        ip: '192.168.1.100',
+        status: 201,
+        timestamp: '2024-02-20 14:25:08'
+      },
+      {
+        id: 242,
+        user: 'lisi',
+        action: '股票筛选',
+        path: '/api/v1/strategy/filter',
+        ip: '192.168.1.102',
+        status: 200,
+        timestamp: '2024-02-20 14:20:45'
+      },
+      {
+        id: 241,
+        user: 'admin',
+        action: '查看日志',
+        path: '/api/v1/admin/logs',
+        ip: '192.168.1.100',
+        status: 200,
+        timestamp: '2024-02-20 14:15:30'
+      },
+      {
+        id: 240,
+        user: 'zhangsan',
+        action: '修改密码',
+        path: '/api/v1/auth/password',
+        ip: '192.168.1.101',
+        status: 200,
+        timestamp: '2024-02-20 14:10:12'
+      },
+      {
+        id: 239,
+        user: 'admin',
+        action: '更新用户',
+        path: '/api/v1/admin/users/3',
+        ip: '192.168.1.100',
+        status: 200,
+        timestamp: '2024-02-20 14:05:55'
+      },
+      {
+        id: 238,
+        user: 'lisi',
+        action: '数据导出',
+        path: '/api/v1/strategy/export',
+        ip: '192.168.1.102',
+        status: 200,
+        timestamp: '2024-02-20 14:00:40'
+      },
+    ];
+    
+    // 渲染日志列表
+    function renderLogs() {
+      const tbody = document.getElementById('logTableBody');
+      tbody.innerHTML = mockLogs.map(log => `
+        <tr>
+          <td>${log.id}</td>
+          <td><strong>${log.user}</strong></td>
+          <td>${getActionBadge(log.action)}</td>
+          <td><code class="log-code">${log.path}</code></td>
+          <td>${log.ip}</td>
+          <td>${getStatusBadge(log.status)}</td>
+          <td>${DateFormatter.formatDateTime(log.timestamp)}</td>
+        </tr>
+      `).join('');
+    }
+    
+    function getActionBadge(action) {
+      const badges = {
+        '登录': 'info',
+        '登出': 'gray',
+        '股票筛选': 'success',
+        '数据导出': 'warning',
+        '创建用户': 'danger',
+        '更新用户': 'danger',
+        '查看日志': 'info',
+        '修改密码': 'warning'
+      };
+      const type = badges[action] || 'gray';
+      return `<span class="badge badge-${type}">${action}</span>`;
+    }
+    
+    function getStatusBadge(status) {
+      if (status >= 200 && status < 300) {
+        return `<span class="badge badge-success">${status}</span>`;
+      } else if (status >= 400 && status < 500) {
+        return `<span class="badge badge-warning">${status}</span>`;
+      } else if (status >= 500) {
+        return `<span class="badge badge-danger">${status}</span>`;
+      }
+      return `<span class="badge badge-gray">${status}</span>`;
+    }
+    
+    // 表单提交
+    document.getElementById('filterForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+      Loading.show(submitBtn);
+      
+      try {
+        await new Promise(resolve => setTimeout(resolve, 800));
+        Toast.success('查询完成');
+        renderLogs();
+      } catch (error) {
+        Toast.error('查询失败');
+      } finally {
+        Loading.hide(submitBtn);
+      }
+    });
+    
+    function resetFilter() {
+      document.getElementById('filterForm').reset();
+      renderLogs();
+    }
+    
+    function handleLogout() {
+      Modal.confirm({
+        title: '确认退出',
+        content: '确定要退出登录吗？',
+        confirmText: '确认退出',
+        onConfirm: () => {
+          Auth.logout();
+        }
+      });
+    }
+    
+    // 初始化
+    renderLogs();
+  </script>
+</body>
+</html>

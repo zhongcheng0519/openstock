@@ -132,9 +132,11 @@
 | **字段名**    | **类型**      | **说明**                              |
 | ------------- | ------------- | ------------------------------------- |
 | id            | BigInt        | **主键** (自增)                       |
-| username      | String(50)    | **唯一索引**，用户名                  |
+| username      | String(50)    | **唯一索引**，用户名（登录用）        |
+| nickname      | String(50)    | **必填**，昵称（显示用）              |
 | password_hash | String(255)   | 密码哈希 (bcrypt)                     |
 | email         | String(100)   | 邮箱地址                              |
+| phone         | String(20)    | 手机号（选填）                        |
 | role          | String(20)    | **索引**，角色 (admin/user)           |
 | is_active     | Boolean       | 是否激活，默认 True                   |
 | created_at    | DateTime      | 创建时间                              |
@@ -145,6 +147,8 @@
 > - 第一个注册的用户自动成为管理员 (`role='admin'`)
 > - 后续注册功能关闭，只能由管理员创建用户
 > - 密码使用 bcrypt 加密存储
+> - 昵称为必填项，用于界面显示用户名称
+> - 手机号为选填项，需验证格式（11位数字）
 
 #### 6. 用户操作日志表 (`user_logs`)
 
@@ -265,8 +269,10 @@
   ```json
   {
     "username": "admin",
+    "nickname": "管理员",
     "password": "your_password",
-    "email": "admin@example.com"
+    "email": "admin@example.com",
+    "phone": "13800138000"
   }
   ```
 
@@ -275,7 +281,9 @@
   {
     "id": 1,
     "username": "admin",
+    "nickname": "管理员",
     "email": "admin@example.com",
+    "phone": "13800138000",
     "role": "admin",
     "created_at": "2024-01-01T00:00:00Z"
   }
@@ -323,6 +331,32 @@
   }
   ```
 
+#### 2.5 修改个人信息
+
+- **URL**: `PUT /api/v1/auth/profile`
+- **Header**: `Authorization: Bearer <token>`
+- **Payload**:
+  ```json
+  {
+    "nickname": "新昵称",
+    "email": "newemail@example.com",
+    "phone": "13800138001"
+  }
+  ```
+
+- **Response**:
+  ```json
+  {
+    "id": 1,
+    "username": "admin",
+    "nickname": "新昵称",
+    "email": "newemail@example.com",
+    "phone": "13800138001",
+    "role": "admin",
+    "updated_at": "2024-01-15T10:30:00Z"
+  }
+  ```
+
 ### 3. 用户管理接口（仅管理员）
 
 #### 3.1 获取用户列表
@@ -347,7 +381,9 @@
       {
         "id": 1,
         "username": "admin",
+        "nickname": "管理员",
         "email": "admin@example.com",
+        "phone": "13800138000",
         "role": "admin",
         "is_active": true,
         "created_at": "2024-01-01T00:00:00Z",
@@ -365,8 +401,10 @@
   ```json
   {
     "username": "newuser",
+    "nickname": "新用户",
     "password": "initial_password",
     "email": "user@example.com",
+    "phone": "13900139000",
     "role": "user"
   }
   ```
@@ -467,6 +505,10 @@
 ## 7. 前端设计 (Responsive UI)
 
 - **技术栈**: Vue 3 + Tailwind CSS。
+- **主题色**: 红色（象征红红火火）
+  - 主色调: `#DC2626` (Tailwind red-600)
+  - 辅助色: `#EF4444` (red-500)、`#B91C1C` (red-700)
+  - 用于按钮、链接、重要信息高亮
 - **适配**:
   - **Desktop**: 宽屏表格，展示所有日线字段（开、高、低、收等）。
   - **Mobile**: 紧凑卡片，仅显示名称、代码、现价及涨跌幅，点击展开详情。
@@ -498,10 +540,10 @@ alembic init alembic
 
 ### 9.2 权限控制
 
-| **角色** | **权限**                                           |
-| -------- | -------------------------------------------------- |
-| admin    | 用户管理、查看所有操作日志、股票筛选、数据导出     |
-| user     | 股票筛选、数据导出、修改个人密码                   |
+| **角色** | **权限**                                                   |
+| -------- | ---------------------------------------------------------- |
+| admin    | 用户管理、查看所有操作日志、股票筛选、数据导出             |
+| user     | 股票筛选、数据导出、修改个人密码、修改个人信息             |
 
 ### 9.3 中间件设计
 
@@ -525,5 +567,6 @@ alembic init alembic
 | export       | 数据导出                     | 导出范围                  |
 | create_user  | 创建用户（管理员）           | 新用户信息                |
 | reset_pwd    | 重置密码（管理员/用户自己）  | 目标用户ID                |
+| update_profile | 修改个人信息               | 修改的字段                |
 | disable_user | 禁用用户（管理员）           | 目标用户ID                |
 

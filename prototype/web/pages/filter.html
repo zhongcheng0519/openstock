@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>股票筛选 - 股票分析系统</title>
+  <link rel="stylesheet" href="../assets/css/common.css">
+  <style>
+    body {
+      background: var(--gray-50);
+    }
+    
+    /* 顶部导航栏 */
+    .navbar {
+      background: white;
+      border-bottom: 1px solid var(--gray-200);
+      box-shadow: var(--shadow-sm);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    
+    .navbar-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+    }
+    
+    .navbar-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--gray-900);
+      text-decoration: none;
+    }
+    
+    .navbar-logo {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      border-radius: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+    
+    .navbar-logo svg {
+      width: 20px;
+      height: 20px;
+    }
+    
+    .navbar-menu {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .navbar-link {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--gray-700);
+      text-decoration: none;
+      border-radius: 0.5rem;
+      transition: var(--transition);
+    }
+    
+    .navbar-link:hover {
+      background: var(--gray-100);
+      color: var(--gray-900);
+    }
+    
+    .navbar-link.active {
+      background: var(--primary-lighter);
+      color: var(--primary);
+    }
+    
+    .navbar-link svg {
+      width: 18px;
+      height: 18px;
+    }
+    
+    .navbar-user {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-left: 1rem;
+      padding-left: 1rem;
+      border-left: 1px solid var(--gray-200);
+    }
+    
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .user-avatar {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 600;
+      font-size: 0.875rem;
+    }
+    
+    .user-name {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--gray-900);
+    }
+    
+    /* 主内容区域 */
+    .main-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
+    
+    .page-header {
+      margin-bottom: 2rem;
+    }
+    
+    .page-title {
+      font-size: 1.875rem;
+      font-weight: 700;
+      color: var(--gray-900);
+      margin-bottom: 0.5rem;
+    }
+    
+    .page-subtitle {
+      font-size: 0.9375rem;
+      color: var(--gray-600);
+    }
+    
+    /* 筛选表单 */
+    .filter-card {
+      background: white;
+      border-radius: 0.75rem;
+      box-shadow: var(--shadow);
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    
+    .filter-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.25rem;
+    }
+    
+    .filter-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-top: 1.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--gray-200);
+    }
+    
+    /* 结果展示区域 */
+    .result-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+    
+    .result-count {
+      font-size: 0.875rem;
+      color: var(--gray-600);
+    }
+    
+    .result-count strong {
+      color: var(--primary);
+      font-weight: 600;
+    }
+    
+    /* 空状态 */
+    .empty-state {
+      background: white;
+      border-radius: 0.75rem;
+      box-shadow: var(--shadow);
+      padding: 4rem 2rem;
+      text-align: center;
+    }
+    
+    .empty-state svg {
+      width: 80px;
+      height: 80px;
+      color: var(--gray-300);
+      margin-bottom: 1.5rem;
+    }
+    
+    .empty-state-title {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: var(--gray-900);
+      margin-bottom: 0.5rem;
+    }
+    
+    .empty-state-text {
+      font-size: 0.875rem;
+      color: var(--gray-600);
+    }
+    
+    /* 表格优化 */
+    .table th {
+      white-space: nowrap;
+    }
+    
+    .stock-code {
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-weight: 600;
+      color: var(--gray-900);
+    }
+    
+    .stock-name {
+      font-weight: 500;
+      color: var(--gray-700);
+    }
+    
+    @media (max-width: 768px) {
+      .navbar-menu {
+        display: none;
+      }
+      
+      .navbar-user .user-name {
+        display: none;
+      }
+      
+      .filter-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .filter-actions {
+        flex-direction: column;
+      }
+      
+      .filter-actions .btn {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- 顶部导航栏 -->
+  <nav class="navbar">
+    <div class="navbar-content">
+      <a href="filter.html" class="navbar-brand">
+        <div class="navbar-logo">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+          </svg>
+        </div>
+        <span>股票分析系统</span>
+      </a>
+      
+      <div class="navbar-menu" id="navbarMenu">
+        <a href="filter.html" class="navbar-link active">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
+          </svg>
+          股票筛选
+        </a>
+        <a href="profile.html" class="navbar-link">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+          </svg>
+          个人中心
+        </a>
+        <a href="users.html" class="navbar-link" id="adminUsersLink" style="display: none;">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+          </svg>
+          用户管理
+        </a>
+        <a href="logs.html" class="navbar-link" id="adminLogsLink" style="display: none;">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+          </svg>
+          操作日志
+        </a>
+      </div>
+      
+      <div class="navbar-user">
+        <div class="user-info">
+          <div class="user-avatar" id="userAvatar">A</div>
+          <span class="user-name" id="userName">管理员</span>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="handleLogout()">
+          <svg style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+          </svg>
+          退出
+        </button>
+      </div>
+    </div>
+  </nav>
+  
+  <!-- 主内容区域 -->
+  <div class="main-container">
+    <div class="page-header">
+      <h1 class="page-title">股票筛选</h1>
+      <p class="page-subtitle">根据多维度条件筛选符合投资策略的股票</p>
+    </div>
+    
+    <!-- 筛选表单 -->
+    <div class="filter-card">
+      <form id="filterForm">
+        <div class="filter-grid">
+          <div class="form-group">
+            <label class="label label-required" for="tradeDate">交易日期</label>
+            <input 
+              type="date" 
+              id="tradeDate" 
+              name="tradeDate" 
+              class="input" 
+              required
+            >
+          </div>
+          
+          <div class="form-group">
+            <label class="label" for="pctChgMin">涨跌幅最小值 (%)</label>
+            <input 
+              type="number" 
+              id="pctChgMin" 
+              name="pctChgMin" 
+              class="input" 
+              placeholder="-100" 
+              step="0.01"
+              value="-100"
+            >
+          </div>
+          
+          <div class="form-group">
+            <label class="label" for="pctChgMax">涨跌幅最大值 (%)</label>
+            <input 
+              type="number" 
+              id="pctChgMax" 
+              name="pctChgMax" 
+              class="input" 
+              placeholder="100" 
+              step="0.01"
+value="100"
+            >
+          </div>
+          
+          <div class="form-group">
+            <label class="label" for="circMvMin">流通市值最小值 (亿元)</label>
+            <input 
+              type="number" 
+              id="circMvMin" 
+              name="circMvMin" 
+              class="input" 
+              placeholder="50" 
+              step="0.01"
+              value="50"
+            >
+          </div>
+          
+          <div class="form-group">
+            <label class="label" for="circMvMax">流通市值最大值 (亿元)</label>
+            <input 
+              type="number" 
+              id="circMvMax" 
+              name="circMvMax" 
+              class="input" 
+              placeholder="不限" 
+              step="0.01"
+            >
+          </div>
+          
+          <div class="form-group">
+            <label class="label" for="peMin">市盈率最小值</label>
+            <input 
+              type="number" 
+              id="peMin" 
+              name="peMin" 
+              class="input" 
+              placeholder="0" 
+              step="0.01"
+              value="0"
+            >
+          </div>
+          
+          <div class="form-group">
+            <label class="label" for="peMax">市盈率最大值</label>
+            <input 
+              type="number" 
+              id="peMax" 
+              name="peMax" 
+              class="input" 
+              placeholder="50" 
+              step="0.01"
+              value="50"
+            >
+          </div>
+          
+          <div class="form-group">
+            <label class="label" for="turnoverMin">换手率最小值 (%)</label>
+            <input 
+              type="number" 
+              id="turnoverMin" 
+              name="turnoverMin" 
+              class="input" 
+              placeholder="5" 
+              step="0.01"
+              value="5"
+            >
+          </div>
+          
+          <div class="form-group">
+            <label class="label" for="netMfMin">净流入额最小值 (万元)</label>
+            <input 
+              type="number" 
+              id="netMfMin" 
+              name="netMfMin" 
+              class="input" 
+              placeholder="不限" 
+              step="0.01"
+            >
+          </div>
+          
+          <div class="form-group">
+            <label class="label" for="limit">结果数量</label>
+            <input 
+              type="number" 
+              id="limit" 
+              name="limit" 
+              class="input" 
+              placeholder="30" 
+              min="1"
+              max="100"
+              value="30"
+            >
+          </div>
+        </div>
+        
+        <div class="filter-actions">
+          <button type="submit" class="btn btn-primary">
+            <svg style="width: 18px; height: 18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            </svg>
+            开始筛选
+          </button>
+          <button type="button" class="btn btn-secondary" onclick="resetForm()">
+            <svg style="width: 18px; height: 18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+            </svg>
+            重置
+          </button>
+          <button type="button" class="btn btn-secondary" onclick="exportResults()" id="exportBtn" disabled>
+            <svg style="width: 18px; height: 18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
+            导出结果
+          </button>
+        </div>
+      </form>
+    </div>
+    
+    <!-- 结果展示区域 -->
+    <div id="resultContainer">
+      <!-- 初始空状态 -->
+      <div class="empty-state">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+        </svg>
+        <h3 class="empty-state-title">暂无筛选结果</h3>
+        <p class="empty-state-text">请设置筛选条件并点击"开始筛选"按钮</p>
+      </div>
+    </div>
+  </div>
+  
+  <script src="../assets/js/common.js"></script>
+  <script>
+    // 权限检查
+    Auth.checkAuth();
+    
+    // 显示用户信息
+    const user = Auth.getUser();
+    if (user) {
+      document.getElementById('userName').textContent = user.nickname;
+      document.getElementById('userAvatar').textContent = user.nickname.charAt(0).toUpperCase();
+      
+      // 显示管理员菜单
+      if (user.role === 'admin') {
+        document.getElementById('adminUsersLink').style.display = 'flex';
+        document.getElementById('adminLogsLink').style.display = 'flex';
+      }
+    }
+    
+    // 设置默认日期为昨天
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    document.getElementById('tradeDate').value = yesterday.toISOString().split('T')[0];
+    
+    // 表单提交
+    let currentResults = [];
+    
+    document.getElementById('filterForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const formData = new FormData(e.target);
+      const params = {
+        trade_date: formData.get('tradeDate'),
+        pct_chg_min: parseFloat(formData.get('pctChgMin')) || -100,
+        pct_chg_max: parseFloat(formData.get('pctChgMax')) || 100,
+        circ_mv_min: parseFloat(formData.get('circMvMin')) || 50,
+        circ_mv_max: parseFloat(formData.get('circMvMax')) || null,
+        pe_min: parseFloat(formData.get('peMin')) || 0,
+        pe_max: parseFloat(formData.get('peMax')) || 50,
+        turnover_min: parseFloat(formData.get('turnoverMin')) || 5,
+        net_mf_min: parseFloat(formData.get('netMfMin')) || null,
+        limit: parseInt(formData.get('limit')) || 30
+      };
+      
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+      Loading.show(submitBtn);
+      
+      try {
+        // 模拟 API 请求
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        // 模拟返回数据
+        currentResults = generateMockData(params.limit);
+        
+        renderResults(currentResults);
+        Toast.success(`筛选完成！共找到 ${currentResults.length} 只股票`);
+        
+      } catch (error) {
+        Toast.error(error.message || '筛选失败，请稍后重试');
+      } finally {
+        Loading.hide(submitBtn);
+      }
+    });
+    
+    // 重置表单
+    function resetForm() {
+      document.getElementById('filterForm').reset();
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      document.getElementById('tradeDate').value = yesterday.toISOString().split('T')[0];
+      currentResults = [];
+      renderEmptyState();
+      document.getElementById('exportBtn').disabled = true;
+    }
+    
+    // 渲染结果
+    function renderResults(data) {
+      const container = document.getElementById('resultContainer');
+      
+      if (!data || data.length === 0) {
+        renderEmptyState();
+        document.getElementById('exportBtn').disabled = true;
+        return;
+      }
+      
+      document.getElementById('exportBtn').disabled = false;
+      
+      container.innerHTML = `
+        <div class="result-header">
+          <div class="result-count">
+            找到 <strong>${data.length}</strong> 只股票
+          </div>
+        </div>
+        <div class="table-container">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>股票代码</th>
+                <th>股票名称</th>
+                <th>收盘价</th>
+                <th>涨跌幅</th>
+                <th>流通市值</th>
+                <th>市盈率</th>
+                <th>换手率</th>
+                <th>净流入额</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${data.map(item => `
+                <tr>
+                  <td><span class="stock-code">${item.ts_code}</span></td>
+                  <td><span class="stock-name">${item.name}</span></td>
+                  <td>${NumberFormatter.formatPrice(item.close)}</td>
+                  <td>${NumberFormatter.formatChange(item.pct_chg)}</td>
+                  <td>${NumberFormatter.formatAmount(item.circ_mv)}</td>
+                  <td>${NumberFormatter.formatPrice(item.pe)}</td>
+                  <td>${NumberFormatter.formatPercent(item.turnover_rate)}</td>
+                  <td>${NumberFormatter.formatAmount(item.net_mf_amount)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+    
+    // 渲染空状态
+    function renderEmptyState() {
+      const container = document.getElementById('resultContainer');
+      container.innerHTML = `
+        <div class="empty-state">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+          </svg>
+          <h3 class="empty-state-title">暂无筛选结果</h3>
+          <p class="empty-state-text">请设置筛选条件并点击"开始筛选"按钮</p>
+        </div>
+      `;
+    }
+    
+    // 导出结果
+    function exportResults() {
+      if (!currentResults || currentResults.length === 0) {
+        Toast.warning('暂无可导出的数据');
+        return;
+      }
+      
+      Toast.success('导出功能开发中...');
+    }
+    
+    // 退出登录
+    function handleLogout() {
+      Modal.confirm({
+        title: '确认退出',
+        content: '确定要退出登录吗？',
+        confirmText: '确认退出',
+        onConfirm: () => {
+          Auth.logout();
+        }
+      });
+    }
+    
+    // 生成模拟数据
+    function generateMockData(count) {
+      const stocks = [
+        { code: '000001', name: '平安银行' },
+        { code: '000002', name: '万科A' },
+        { code: '000333', name: '美的集团' },
+        { code: '000651', name: '格力电器' },
+        { code: '000858', name: '五粮液' },
+        { code: '600000', name: '浦发银行' },
+        { code: '600036', name: '招商银行' },
+        { code: '600519', name: '贵州茅台' },
+        { code: '600887', name: '伊利股份' },
+        { code: '601318', name: '中国平安' },
+        { code: '601398', name: '工商银行' },
+        { code: '601857', name: '中国石油' },
+        { code: '601988', name: '中国银行' },
+        { code: '603288', name: '海天味业' },
+      ];
+      
+      const data = [];
+      for (let i = 0; i < Math.min(count, stocks.length); i++) {
+        const stock = stocks[i];
+        data.push({
+          ts_code: stock.code + (stock.code.startsWith('6') ? '.SH' : '.SZ'),
+          name: stock.name,
+          close: (Math.random() * 200 + 10).toFixed(2),
+          pct_chg: (Math.random() * 20 - 10).toFixed(2),
+          circ_mv: (Math.random() * 50000 + 5000).toFixed(2),
+          pe: (Math.random() * 40 + 5).toFixed(2),
+          turnover_rate: (Math.random() * 15 + 2).toFixed(2),
+          net_mf_amount: (Math.random() * 100000 - 50000).toFixed(2)
+        });
+      }
+      
+      // 按净流入额降序排序
+      data.sort((a, b) => parseFloat(b.net_mf_amount) - parseFloat(a.net_mf_amount));
+      
+      return data;
+    }
+  </script>
+</body>
+</html>

@@ -1,5 +1,5 @@
-from datetime import date
-from sqlalchemy import String, Numeric, Date, BigInteger, ForeignKey, Index
+from datetime import date, datetime
+from sqlalchemy import String, Numeric, Date, BigInteger, ForeignKey, Index, Boolean, DateTime, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -16,7 +16,6 @@ class Stock(Base):
     industry: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="所属行业")
     list_date: Mapped[str | None] = mapped_column(String(10), nullable=True, comment="上市日期")
     
-    # 关联关系
     daily_quotes: Mapped[list["DailyQuote"]] = relationship("DailyQuote", back_populates="stock", lazy="selectin")
     daily_basics: Mapped[list["DailyBasic"]] = relationship("DailyBasic", back_populates="stock", lazy="selectin")
     moneyflows: Mapped[list["Moneyflow"]] = relationship("Moneyflow", back_populates="stock", lazy="selectin")
@@ -42,10 +41,8 @@ class DailyQuote(Base):
     vol: Mapped[float | None] = mapped_column(Numeric(18, 4), nullable=True, comment="成交量(手)")
     amount: Mapped[float | None] = mapped_column(Numeric(18, 4), nullable=True, comment="成交额(千元)")
     
-    # 关联关系
     stock: Mapped[Stock] = relationship("Stock", back_populates="daily_quotes")
     
-    # 索引
     __table_args__ = (
         Index("idx_daily_hq_ts_code", "ts_code"),
         Index("idx_daily_hq_trade_date", "trade_date"),
@@ -120,10 +117,8 @@ class DailyBasic(Base):
     total_mv: Mapped[float | None] = mapped_column(Numeric(20, 4), nullable=True, comment="总市值(万元)")
     circ_mv: Mapped[float | None] = mapped_column(Numeric(20, 4), nullable=True, comment="流通市值(万元)")
     
-    # 关联关系
     stock: Mapped[Stock] = relationship("Stock", back_populates="daily_basics")
     
-    # 索引
     __table_args__ = (
         Index("idx_daily_basic_ts_code", "ts_code"),
         Index("idx_daily_basic_trade_date", "trade_date"),
@@ -135,3 +130,57 @@ class DailyBasic(Base):
     
     def __repr__(self) -> str:
         return f"<DailyBasic(ts_code='{self.ts_code}', trade_date='{self.trade_date}', circ_mv={self.circ_mv})>"
+
+
+class User(Base):
+    """用户表"""
+    __tablename__ = "users"
+    
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True, comment="主键")
+    username: Mapped[str] = mapped_column(String(50), unique=True, nullable=False, comment="用户名")
+    nickname: Mapped[str] = mapped_column(String(50), nullable=False, comment="昵称")
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=False, comment="密码哈希")
+    email: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="邮箱地址")
+    phone: Mapped[str | None] = mapped_column(String(20), nullable=True, comment="手机号")
+    role: Mapped[str] = mapped_column(String(20), default="user", nullable=False, comment="角色(admin/user)")
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False, comment="是否激活")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False, comment="创建时间")
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False, comment="更新时间")
+    created_by: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("users.id"), nullable=True, comment="创建者用户ID")
+    
+    logs: Mapped[list["UserLog"]] = relationship("UserLog", back_populates="user", lazy="selectin")
+    
+    __table_args__ = (
+        Index("idx_users_username", "username"),
+        Index("idx_users_role", "role"),
+    )
+    
+    def __repr__(self) -> str:
+        return f"<User(id={self.id}, username='{self.username}', role='{self.role}')>"
+
+
+class UserLog(Base):
+    """用户操作日志表"""
+    __tablename__ = "user_logs"
+    
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True, comment="主键")
+    user_id: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("users.id"), nullable=True, comment="操作用户ID")
+    action: Mapped[str] = mapped_column(String(50), nullable=False, comment="操作类型")
+    resource: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="操作资源(API路径)")
+    method: Mapped[str | None] = mapped_column(String(10), nullable=True, comment="HTTP方法")
+    params: Mapped[dict | None] = mapped_column(JSON, nullable=True, comment="请求参数(脱敏处理)")
+    ip_address: Mapped[str | None] = mapped_column(String(45), nullable=True, comment="客户端IP地址")
+    user_agent: Mapped[str | None] = mapped_column(String(255), nullable=True, comment="客户端User-Agent")
+    status_code: Mapped[int | None] = mapped_column(BigInteger, nullable=True, comment="响应状态码")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False, comment="操作时间")
+    
+    user: Mapped[User | None] = relationship("User", back_populates="logs")
+    
+    __table_args__ = (
+        Index("idx_user_logs_user_id", "user_id"),
+        Index("idx_user_logs_created_at", "created_at"),
+        Index("idx_user_logs_action", "action"),
+    )
+    
+    def __repr__(self) -> str:
+        return f"<UserLog(id={self.id}, user_id={self.user_id}, action='{self.action}')>"

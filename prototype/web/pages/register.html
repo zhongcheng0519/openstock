@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>系统初始化 - 股票分析系统</title>
+  <link rel="stylesheet" href="../assets/css/common.css">
+  <style>
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #FEE2E2 0%, #FECACA 50%, #FCA5A5 100%);
+      padding: 2rem 1rem;
+    }
+    
+    .register-container {
+      width: 100%;
+      max-width: 540px;
+    }
+    
+    .register-card {
+      background: white;
+      border-radius: 1rem;
+      box-shadow: var(--shadow-xl);
+      padding: 2.5rem 2rem;
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    
+    .badge-init {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: linear-gradient(135deg, var(--primary-lighter) 0%, #FECACA 100%);
+      color: var(--primary);
+      border-radius: 9999px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+    
+    .badge-init svg {
+      width: 18px;
+      height: 18px;
+    }
+    
+    .title {
+      font-size: 1.875rem;
+      font-weight: 700;
+      color: var(--gray-900);
+      margin-bottom: 0.5rem;
+    }
+    
+    .subtitle {
+      font-size: 0.9375rem;
+      color: var(--gray-600);
+      line-height: 1.6;
+    }
+    
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.25rem;
+    }
+    
+    @media (min-width: 540px) {
+      .form-grid-2 {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+    
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .info-box {
+      background: linear-gradient(135deg, #FEF2F2 0%, #FEE2E2 100%);
+      border-left: 3px solid var(--primary);
+      border-radius: 0.5rem;
+      padding: 1rem;
+      margin-top: 1.5rem;
+      font-size: 0.875rem;
+      color: var(--gray-700);
+    }
+    
+    .info-box-title {
+      font-weight: 600;
+      color: var(--primary);
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .info-box-title svg {
+      width: 18px;
+      height: 18px;
+    }
+    
+    .info-box ul {
+      margin: 0.5rem 0 0 0;
+      padding-left: 1.25rem;
+    }
+    
+    .info-box li {
+      margin: 0.25rem 0;
+    }
+    
+    .login-link {
+      text-align: center;
+      margin-top: 1.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--gray-200);
+      font-size: 0.875rem;
+      color: var(--gray-600);
+    }
+    
+    .login-link a {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 500;
+      transition: var(--transition);
+    }
+    
+    .login-link a:hover {
+      color: var(--primary-hover);
+      text-decoration: underline;
+    }
+    
+    .password-strength {
+      margin-top: 0.5rem;
+      font-size: 0.8125rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    .strength-bar {
+      flex: 1;
+      height: 4px;
+      background: var(--gray-200);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    
+    .strength-fill {
+      height: 100%;
+      width: 0%;
+      transition: all 0.3s ease;
+      border-radius: 2px;
+    }
+    
+    .strength-weak .strength-fill {
+      width: 33%;
+      background: var(--danger);
+    }
+    
+    .strength-medium .strength-fill {
+      width: 66%;
+      background: var(--warning);
+    }
+    
+    .strength-strong .strength-fill {
+      width: 100%;
+      background: var(--success);
+    }
+  </style>
+</head>
+<body>
+  <div class="register-container">
+    <div class="register-card">
+      <div class="header">
+        <div class="badge-init">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+          </svg>
+          系统初始化
+        </div>
+        <h1 class="title">创建管理员账号</h1>
+        <p class="subtitle">欢迎使用股票分析系统！请创建第一个管理员账号以开始使用</p>
+      </div>
+      
+      <form id="registerForm">
+        <div class="form-grid form-grid-2">
+          <div class="form-group">
+            <label class="label label-required" for="username">用户名</label>
+            <input 
+              type="text" 
+              id="username" 
+              name="username" 
+              class="input" 
+              placeholder="用于登录"
+              autocomplete="username"
+              required
+            >
+            <p class="text-xs text-gray mt-1">仅支持字母、数字、下划线</p>
+          </div>
+          
+          <div class="form-group">
+            <label class="label label-required" for="nickname">昵称</label>
+            <input 
+              type="text" 
+              id="nickname" 
+              name="nickname" 
+              class="input" 
+              placeholder="用于显示"
+              required
+            >
+          </div>
+        </div>
+        
+        <div class="form-grid form-grid-2" style="margin-top: 1.25rem;">
+          <div class="form-group">
+            <label class="label label-required" for="password">密码</label>
+            <input 
+              type="password" 
+              id="password" 
+              name="password" 
+              class="input" 
+              placeholder="至少8位"
+              autocomplete="new-password"
+              required
+            >
+            <div class="password-strength" id="passwordStrength" style="display: none;">
+              <div class="strength-bar">
+                <div class="strength-fill"></div>
+              </div>
+              <span class="strength-text text-xs"></span>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label class="label label-required" for="confirmPassword">确认密码</label>
+            <input 
+              type="password" 
+              id="confirmPassword" 
+              name="confirmPassword" 
+              class="input" 
+              placeholder="再次输入密码"
+              autocomplete="new-password"
+              required
+            >
+          </div>
+        </div>
+        
+        <div class="form-grid form-grid-2" style="margin-top: 1.25rem;">
+          <div class="form-group">
+            <label class="label label-required" for="email">邮箱地址</label>
+            <input 
+              type="email" 
+              id="email" 
+              name="email" 
+              class="input" 
+              placeholder="example@domain.com"
+              autocomplete="email"
+              required
+            >
+          </div>
+          
+          <div class="form-group">
+            <label class="label" for="phone">手机号（选填）</label>
+            <input 
+              type="tel" 
+              id="phone" 
+              name="phone" 
+              class="input" 
+              placeholder="11位手机号"
+              autocomplete="tel"
+              maxlength="11"
+            >
+          </div>
+        </div>
+        
+        <div class="info-box">
+          <div class="info-box-title">
+            <svg fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+            </svg>
+            重要提示
+          </div>
+          <ul>
+            <li>这是系统第一个用户，将自动获得<strong>管理员权限</strong></li>
+            <li>管理员可以管理其他用户、查看操作日志</li>
+            <li>密码需包含字母和数字，长度至少8位</li>
+            <li>请妥善保管账号信息，遗失后需联系技术支持</li>
+          </ul>
+        </div>
+        
+        <button type="submit" class="btn btn-primary btn-lg" style="width: 100%; margin-top: 1.5rem;">
+          <svg style="width: 20px; height: 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          创建管理员账号
+        </button>
+      </form>
+      
+      <div class="login-link">
+        已有账号？
+        <a href="login.html">立即登录</a>
+      </div>
+    </div>
+  </div>
+  
+  <script src="../assets/js/common.js"></script>
+  <script>
+    // 密码强度检测
+    const passwordInput = document.getElementById('password');
+    const strengthIndicator = document.getElementById('passwordStrength');
+    const strengthBar = strengthIndicator.querySelector('.strength-bar');
+    const strengthText = strengthIndicator.querySelector('.strength-text');
+    
+    passwordInput.addEventListener('input', () => {
+      const password = passwordInput.value;
+      
+      if (password.length === 0) {
+        strengthIndicator.style.display = 'none';
+        return;
+      }
+      
+      strengthIndicator.style.display = 'flex';
+      
+      let strength = 0;
+      if (password.length >= 8) strength++;
+      if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
+      if (/\d/.test(password)) strength++;
+      if (/[^a-zA-Z0-9]/.test(password)) strength++;
+      
+      strengthBar.className = 'strength-bar';
+      if (strength <= 1) {
+        strengthBar.classList.add('strength-weak');
+        strengthText.textContent = '弱';
+        strengthText.style.color = 'var(--danger)';
+      } else if (strength <= 2) {
+        strengthBar.classList.add('strength-medium');
+        strengthText.textContent = '中';
+        strengthText.style.color = 'var(--warning)';
+      } else {
+        strengthBar.classList.add('strength-strong');
+        strengthText.textContent = '强';
+        strengthText.style.color = 'var(--success)';
+      }
+    });
+    
+    // 表单提交处理
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const formData = new FormData(e.target);
+      const data = {
+        username: formData.get('username').trim(),
+        nickname: formData.get('nickname').trim(),
+        password: formData.get('password'),
+        confirmPassword: formData.get('confirmPassword'),
+        email: formData.get('email').trim(),
+        phone: formData.get('phone').trim()
+      };
+      
+      // 表单验证
+      if (!data.username) {
+        Toast.error('请输入用户名');
+        return;
+      }
+      
+      if (!/^[a-zA-Z0-9_]+$/.test(data.username)) {
+        Toast.error('用户名只能包含字母、数字、下划线');
+        return;
+      }
+      
+      if (!data.nickname) {
+        Toast.error('请输入昵称');
+        return;
+      }
+      
+      if (!data.password) {
+        Toast.error('请输入密码');
+        return;
+      }
+      
+      if (!Validator.password(data.password)) {
+        Toast.error('密码至少8位，需包含字母和数字');
+        return;
+      }
+      
+      if (data.password !== data.confirmPassword) {
+        Toast.error('两次输入的密码不一致');
+        return;
+      }
+      
+      if (!Validator.email(data.email)) {
+        Toast.error('请输入正确的邮箱地址');
+        return;
+      }
+      
+      if (data.phone && !Validator.phone(data.phone)) {
+        Toast.error('请输入正确的手机号');
+        return;
+      }
+      
+      // 提交注册
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+      Loading.show(submitBtn);
+      
+      try {
+        // 在实际项目中，这里应该调用后端 API
+        // const result = await API.post('/auth/register', data);
+        
+        // 模拟 API 延迟
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        Toast.success('注册成功！正在跳转到登录页面...');
+        
+        setTimeout(() => {
+          window.location.href = 'login.html';
+        }, 1500);
+        
+      } catch (error) {
+        Toast.error(error.message || '注册失败，请稍后重试');
+        Loading.hide(submitBtn);
+      }
+    });
+  </script>
+</body>
+</html>

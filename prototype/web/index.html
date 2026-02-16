@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>股票分析系统</title>
+  <script src="assets/js/common.js"></script>
+  <script>
+    // 自动跳转：已登录跳转到股票筛选页，未登录跳转到登录页
+    if (Auth.isLoggedIn()) {
+      window.location.href = 'pages/filter.html';
+    } else {
+      window.location.href = 'pages/login.html';
+    }
+  </script>
+</head>
+<body>
+  <div style="display: flex; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif;">
+    <p>正在加载...</p>
+  </div>
+</body>
+</html>

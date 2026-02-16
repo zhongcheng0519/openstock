@@ -1,6 +1,6 @@
-from datetime import date
+from datetime import date, datetime
 from typing import Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr, field_validator
 
 
 class StockFilterRequest(BaseModel):
@@ -80,3 +80,163 @@ class SyncStatusResponse(BaseModel):
     """同步状态响应"""
     message: str
     synced_count: int
+
+
+class UserRegisterRequest(BaseModel):
+    """用户注册请求"""
+    username: str = Field(..., min_length=3, max_length=50, description="用户名")
+    nickname: str = Field(..., min_length=1, max_length=50, description="昵称")
+    password: str = Field(..., min_length=8, max_length=100, description="密码")
+    email: EmailStr = Field(..., description="邮箱地址")
+    phone: Optional[str] = Field(default=None, max_length=11, description="手机号")
+    
+    @field_validator('username')
+    @classmethod
+    def validate_username(cls, v):
+        if not v.replace('_', '').isalnum():
+            raise ValueError('用户名只能包含字母、数字、下划线')
+        return v
+    
+    @field_validator('phone')
+    @classmethod
+    def validate_phone(cls, v):
+        if v and not v.isdigit():
+            raise ValueError('手机号必须为数字')
+        if v and len(v) != 11:
+            raise ValueError('手机号必须为11位')
+        return v
+
+
+class UserLoginRequest(BaseModel):
+    """用户登录请求"""
+    username: str = Field(..., description="用户名")
+    password: str = Field(..., description="密码")
+
+
+class UserResponse(BaseModel):
+    """用户信息响应"""
+    id: int
+    username: str
+    nickname: str
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    role: str
+    is_active: bool = True
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+    
+    class Config:
+        from_attributes = True
+
+
+class TokenResponse(BaseModel):
+    """Token响应"""
+    access_token: str
+    token_type: str = "bearer"
+    expires_in: int = 3600
+    user: UserResponse
+
+
+class PasswordChangeRequest(BaseModel):
+    """修改密码请求"""
+    old_password: str = Field(..., description="当前密码")
+    new_password: str = Field(..., min_length=8, max_length=100, description="新密码")
+
+
+class ProfileUpdateRequest(BaseModel):
+    """更新个人信息请求"""
+    nickname: str = Field(..., min_length=1, max_length=50, description="昵称")
+    email: EmailStr = Field(..., description="邮箱地址")
+    phone: Optional[str] = Field(default=None, max_length=11, description="手机号")
+    
+    @field_validator('phone')
+    @classmethod
+    def validate_phone(cls, v):
+        if v and not v.isdigit():
+            raise ValueError('手机号必须为数字')
+        if v and len(v) != 11:
+            raise ValueError('手机号必须为11位')
+        return v
+
+
+class UserCreateRequest(BaseModel):
+    """管理员创建用户请求"""
+    username: str = Field(..., min_length=3, max_length=50, description="用户名")
+    nickname: str = Field(..., min_length=1, max_length=50, description="昵称")
+    password: str = Field(..., min_length=8, max_length=100, description="密码")
+    email: EmailStr = Field(..., description="邮箱地址")
+    phone: Optional[str] = Field(default=None, max_length=11, description="手机号")
+    role: str = Field(default="user", description="角色(admin/user)")
+    
+    @field_validator('username')
+    @classmethod
+    def validate_username(cls, v):
+        if not v.replace('_', '').isalnum():
+            raise ValueError('用户名只能包含字母、数字、下划线')
+        return v
+    
+    @field_validator('phone')
+    @classmethod
+    def validate_phone(cls, v):
+        if v and not v.isdigit():
+            raise ValueError('手机号必须为数字')
+        if v and len(v) != 11:
+            raise ValueError('手机号必须为11位')
+        return v
+    
+    @field_validator('role')
+    @classmethod
+    def validate_role(cls, v):
+        if v not in ['admin', 'user']:
+            raise ValueError('角色只能是 admin 或 user')
+        return v
+
+
+class UserStatusUpdateRequest(BaseModel):
+    """更新用户状态请求"""
+    is_active: bool = Field(..., description="是否激活")
+
+
+class PasswordResetRequest(BaseModel):
+    """重置密码请求"""
+    new_password: str = Field(..., min_length=8, max_length=100, description="新密码")
+
+
+class UserListResponse(BaseModel):
+    """用户列表响应"""
+    total: int
+    page: int
+    page_size: int
+    items: list[UserResponse]
+
+
+class UserLogResponse(BaseModel):
+    """操作日志响应"""
+    id: int
+    user_id: Optional[int] = None
+    username: Optional[str] = None
+    action: str
+    resource: Optional[str] = None
+    method: Optional[str] = None
+    ip_address: Optional[str] = None
+    status_code: Optional[int] = None
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+
+class UserLogListResponse(BaseModel):
+    """操作日志列表响应"""
+    total: int
+    page: int
+    page_size: int
+    items: list[UserLogResponse]
+
+
+class LogStatisticsResponse(BaseModel):
+    """操作统计响应"""
+    total_requests: int
+    unique_users: int
+    by_action: dict[str, int]
+    by_user: list[dict]
