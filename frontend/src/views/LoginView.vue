@@ -36,64 +36,64 @@ async function handleLogin() {
 </script>
 
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-100 via-red-200 to-red-300 p-4">
-    <div class="w-full max-w-[440px]">
-      <div class="bg-white rounded-2xl shadow-xl p-12 px-10">
-        <div class="text-center mb-8">
-          <div class="w-16 h-16 bg-gradient-to-br from-red-600 to-red-500 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-[0_4px_14px_0_rgba(220,38,38,0.3)]">
+  <div class="login-page">
+    <div class="login-container">
+      <div class="login-card">
+        <div class="logo-container">
+          <div class="logo">
             <svg class="w-9 h-9 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
             </svg>
           </div>
-          <h1 class="text-[1.75rem] font-bold text-gray-900">股票分析系统</h1>
-          <p class="text-sm text-gray-500 mt-2">Stock Analysis System</p>
+          <h1 class="logo-title">股票分析系统</h1>
+          <p class="logo-subtitle">Stock Analysis System</p>
         </div>
         
-        <form @submit.prevent="handleLogin" class="space-y-6">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              用户名 <span class="text-red-500">*</span>
+        <form @submit.prevent="handleLogin" class="login-form">
+          <div class="form-group">
+            <label class="label label-required">
+              用户名
             </label>
-            <div class="relative">
-              <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="input-wrapper">
+              <svg class="input-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
               </svg>
               <input
                 v-model="username"
                 type="text"
-                class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors"
+                class="input input-with-icon"
                 placeholder="请输入用户名"
                 autocomplete="username"
               />
             </div>
           </div>
           
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              密码 <span class="text-red-500">*</span>
+          <div class="form-group">
+            <label class="label label-required">
+              密码
             </label>
-            <div class="relative">
-              <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="input-wrapper">
+              <svg class="input-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
               </svg>
               <input
                 v-model="password"
                 type="password"
-                class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors"
+                class="input input-with-icon"
                 placeholder="请输入密码"
                 autocomplete="current-password"
               />
             </div>
           </div>
           
-          <div v-if="errorMessage" class="p-3 bg-red-50 border border-red-200 rounded-lg">
-            <p class="text-sm text-red-600">{{ errorMessage }}</p>
+          <div v-if="errorMessage" class="error-message">
+            <p>{{ errorMessage }}</p>
           </div>
           
           <button
             type="submit"
             :disabled="loading"
-            class="w-full py-3 px-4 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            class="btn btn-primary btn-lg w-full"
           >
             <svg v-if="loading" class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -106,8 +106,8 @@ async function handleLogin() {
           </button>
         </form>
         
-        <div class="mt-6 pt-6 border-t border-gray-200 text-center">
-          <p class="text-sm text-gray-600">
+        <div class="register-hint">
+          <p>
             首次使用？
             <router-link to="/register" class="text-red-600 hover:text-red-700 font-medium">
               立即注册
@@ -116,7 +116,7 @@ async function handleLogin() {
         </div>
       </div>
       
-      <p class="text-center mt-6 text-sm text-gray-500">
+      <p class="login-footer">
         © 2024 股票分析系统 v1.0
       </p>
     </div>

@@ -140,136 +140,159 @@ onMounted(() => {
 
 <template>
   <div class="min-h-screen bg-gray-50">
-    <nav class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-16">
-          <div class="flex items-center">
-            <router-link to="/" class="flex items-center gap-3">
-              <div class="w-9 h-9 bg-gradient-to-br from-red-600 to-red-500 rounded-lg flex items-center justify-center">
-                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
-                </svg>
-              </div>
-              <span class="text-xl font-bold text-gray-900">股票分析系统</span>
-            </router-link>
+    <!-- 顶部导航栏 -->
+    <nav class="navbar">
+      <div class="navbar-content">
+        <router-link to="/" class="navbar-brand">
+          <div class="navbar-logo">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+            </svg>
           </div>
-          
-          <div class="flex items-center gap-4">
-            <router-link to="/" class="px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
-              股票筛选
-            </router-link>
-            <router-link to="/profile" class="px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
-              个人中心
-            </router-link>
-            <router-link to="/users" class="px-3 py-2 text-sm font-medium text-red-600 bg-red-50 rounded-lg">
-              用户管理
-            </router-link>
-            <router-link to="/logs" class="px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
-              操作日志
-            </router-link>
-            
-            <div class="flex items-center gap-3 pl-4 border-l border-gray-200">
-              <div class="w-8 h-8 bg-gradient-to-br from-red-600 to-red-500 rounded-full flex items-center justify-center text-white font-medium text-sm">
-                {{ authStore.userInitial }}
-              </div>
-              <span class="text-sm font-medium text-gray-900">{{ authStore.user?.nickname }}</span>
-              <button @click="handleLogout" class="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                退出
-              </button>
+          <span>股票分析系统</span>
+        </router-link>
+        
+        <div class="navbar-menu">
+          <router-link to="/" class="navbar-link">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
+            </svg>
+            股票筛选
+          </router-link>
+          <router-link to="/profile" class="navbar-link">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+            </svg>
+            个人中心
+          </router-link>
+          <router-link to="/users" class="navbar-link active">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+            </svg>
+            用户管理
+          </router-link>
+          <router-link to="/logs" class="navbar-link">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
+            操作日志
+          </router-link>
+        </div>
+        
+        <div class="navbar-user">
+          <div class="user-info">
+            <div class="user-avatar">
+              {{ authStore.userInitial }}
             </div>
+            <span class="user-name">{{ authStore.user?.nickname }}</span>
           </div>
+          <button @click="handleLogout" class="btn btn-secondary btn-sm">
+            <svg style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+            </svg>
+            退出
+          </button>
         </div>
       </div>
     </nav>
     
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div class="flex justify-between items-center mb-8">
-        <div>
-          <h1 class="text-2xl font-bold text-gray-900">用户管理</h1>
-          <p class="text-gray-600 mt-1">管理系统用户账号和权限</p>
+    <main class="main-container">
+      <!-- 页面标题 -->
+      <div class="page-header">
+        <div class="page-title-group">
+          <h1 class="page-title">用户管理</h1>
+          <p class="page-subtitle">管理系统用户账号和权限</p>
         </div>
         <button
           @click="showCreateModal = true"
-          class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors flex items-center gap-2"
+          class="btn btn-primary"
         >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg style="width: 18px; height: 18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
           </svg>
           创建用户
         </button>
       </div>
       
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
-        <div class="bg-white rounded-xl shadow-sm p-6">
-          <p class="text-sm text-gray-500">总用户数</p>
-          <p class="text-3xl font-bold text-gray-900 mt-1">{{ total }}</p>
+      <!-- 统计卡片 -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">总用户数</div>
+          <div class="stat-value">{{ total }}</div>
         </div>
-        <div class="bg-white rounded-xl shadow-sm p-6">
-          <p class="text-sm text-gray-500">活跃用户</p>
-          <p class="text-3xl font-bold text-gray-900 mt-1">{{ stats.activeUsers }}</p>
+        <div class="stat-card">
+          <div class="stat-label">活跃用户</div>
+          <div class="stat-value">{{ stats.activeUsers }}</div>
         </div>
-        <div class="bg-white rounded-xl shadow-sm p-6">
-          <p class="text-sm text-gray-500">管理员</p>
-          <p class="text-3xl font-bold text-gray-900 mt-1">{{ stats.adminUsers }}</p>
+        <div class="stat-card">
+          <div class="stat-label">管理员</div>
+          <div class="stat-value">{{ stats.adminUsers }}</div>
         </div>
       </div>
       
-      <div class="bg-white rounded-xl shadow-sm overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
+      <!-- 用户表格 -->
+      <div class="table-container">
+        <table class="table">
+          <thead>
             <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">用户名</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">昵称</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">邮箱</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">角色</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">状态</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">创建时间</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+              <th>ID</th>
+              <th>用户名</th>
+              <th>昵称</th>
+              <th>邮箱</th>
+              <th>角色</th>
+              <th>状态</th>
+              <th>创建时间</th>
+              <th>操作</th>
             </tr>
           </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
-            <tr v-for="user in users" :key="user.id" class="hover:bg-gray-50">
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ user.id }}</td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ user.username }}</td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ user.nickname }}</td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ user.email }}</td>
-              <td class="px-6 py-4 whitespace-nowrap">
+          <tbody>
+            <tr v-for="user in users" :key="user.id">
+              <td>{{ user.id }}</td>
+              <td><strong>{{ user.username }}</strong></td>
+              <td>{{ user.nickname }}</td>
+              <td>{{ user.email }}</td>
+              <td>
                 <span 
-                  class="px-2 py-1 text-xs font-medium rounded-full"
-                  :class="user.role === 'admin' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'"
+                  class="badge"
+                  :class="user.role === 'admin' ? 'badge-danger' : 'badge-info'"
                 >
                   {{ user.role === 'admin' ? '管理员' : '普通用户' }}
                 </span>
               </td>
-              <td class="px-6 py-4 whitespace-nowrap">
+              <td>
                 <span 
-                  class="px-2 py-1 text-xs font-medium rounded-full"
-                  :class="user.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'"
+                  class="badge"
+                  :class="user.is_active ? 'badge-success' : 'badge-gray'"
                 >
                   {{ user.is_active ? '正常' : '已禁用' }}
                 </span>
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ user.created_at?.split('T')[0] }}</td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm">
-                <div class="flex items-center gap-2">
+              <td>{{ user.created_at?.split('T')[0] }}</td>
+              <td>
+                <div class="table-actions">
                   <button
                     @click="handleResetPassword(user)"
-                    class="px-2 py-1 text-xs bg-red-50 text-red-600 hover:bg-red-100 rounded transition-colors"
+                    class="action-btn action-btn-primary"
                   >
-                    重置密码
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
+                    </svg>
+                    重置
                   </button>
                   <button
                     @click="handleToggleStatus(user)"
-                    class="px-2 py-1 text-xs bg-gray-100 text-gray-600 hover:bg-gray-200 rounded transition-colors"
+                    class="action-btn action-btn-secondary"
                   >
                     {{ user.is_active ? '禁用' : '启用' }}
                   </button>
                   <button
                     v-if="user.id !== authStore.user?.id"
                     @click="handleDeleteUser(user)"
-                    class="px-2 py-1 text-xs bg-red-50 text-red-600 hover:bg-red-100 rounded transition-colors"
+                    class="action-btn action-btn-danger"
                   >
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    </svg>
                     删除
                   </button>
                   <span v-else class="text-xs text-gray-400">当前用户</span>
@@ -281,67 +304,69 @@ onMounted(() => {
       </div>
     </main>
     
-    <div v-if="showCreateModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div class="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4">
-        <div class="flex items-center justify-between p-6 border-b border-gray-200">
-          <h3 class="text-lg font-semibold text-gray-900">创建新用户</h3>
-          <button @click="showCreateModal = false" class="text-gray-400 hover:text-gray-600">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <!-- 创建用户弹窗 -->
+    <div v-if="showCreateModal" class="modal-overlay" @click.self="showCreateModal = false">
+      <div class="modal" style="width: 600px;">
+        <div class="modal-header">
+          <h3 class="modal-title">创建新用户</h3>
+          <button @click="showCreateModal = false" class="modal-close" style="background: none; border: none; color: var(--gray-400); cursor: pointer; padding: 0;">
+            <svg style="width: 24px; height: 24px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
             </svg>
           </button>
         </div>
+        <div class="modal-body">
+          <form @submit.prevent="handleCreateUser">
+            <div class="form-grid form-grid-2">
+              <div class="form-group">
+                <label class="label label-required">用户名</label>
+                <input v-model="createForm.username" type="text" class="input" placeholder="用于登录" />
+              </div>
+              <div class="form-group">
+                <label class="label label-required">昵称</label>
+                <input v-model="createForm.nickname" type="text" class="input" placeholder="用于显示" />
+              </div>
+            </div>
+            
+            <div class="form-grid form-grid-2" style="margin-top: 1rem;">
+              <div class="form-group">
+                <label class="label label-required">邮箱</label>
+                <input v-model="createForm.email" type="email" class="input" placeholder="example@domain.com" />
+              </div>
+              <div class="form-group">
+                <label class="label">手机号</label>
+                <input v-model="createForm.phone" type="tel" class="input" placeholder="选填" maxlength="11" />
+              </div>
+            </div>
+            
+            <div class="form-grid form-grid-2" style="margin-top: 1rem;">
+              <div class="form-group">
+                <label class="label label-required">初始密码</label>
+                <input v-model="createForm.password" type="password" class="input" placeholder="至少8位" />
+              </div>
+              <div class="form-group">
+                <label class="label label-required">角色</label>
+                <select v-model="createForm.role" class="input">
+                  <option value="user">普通用户</option>
+                  <option value="admin">管理员</option>
+                </select>
+              </div>
+            </div>
+            
+            <div v-if="createError" class="error-message" style="margin-top: 1rem;">
+              <p>{{ createError }}</p>
+            </div>
+          </form>
+        </div>
         
-        <form @submit.prevent="handleCreateUser" class="p-6 space-y-4">
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">用户名 <span class="text-red-500">*</span></label>
-              <input v-model="createForm.username" type="text" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500" placeholder="用于登录" />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">昵称 <span class="text-red-500">*</span></label>
-              <input v-model="createForm.nickname" type="text" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500" placeholder="用于显示" />
-            </div>
-          </div>
-          
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">邮箱 <span class="text-red-500">*</span></label>
-              <input v-model="createForm.email" type="email" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500" placeholder="example@domain.com" />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">手机号</label>
-              <input v-model="createForm.phone" type="tel" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500" placeholder="选填" maxlength="11" />
-            </div>
-          </div>
-          
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">初始密码 <span class="text-red-500">*</span></label>
-              <input v-model="createForm.password" type="password" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500" placeholder="至少8位" />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">角色 <span class="text-red-500">*</span></label>
-              <select v-model="createForm.role" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500">
-                <option value="user">普通用户</option>
-                <option value="admin">管理员</option>
-              </select>
-            </div>
-          </div>
-          
-          <div v-if="createError" class="p-3 bg-red-50 border border-red-200 rounded-lg">
-            <p class="text-sm text-red-600">{{ createError }}</p>
-          </div>
-        </form>
-        
-        <div class="flex justify-end gap-3 p-6 border-t border-gray-200">
-          <button @click="showCreateModal = false" class="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+        <div class="modal-footer">
+          <button @click="showCreateModal = false" class="btn btn-secondary">
             取消
           </button>
           <button
             @click="handleCreateUser"
             :disabled="createLoading"
-            class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50"
+            class="btn btn-primary"
           >
             {{ createLoading ? '创建中...' : '创建用户' }}
           </button>

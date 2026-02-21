@@ -24,17 +24,17 @@ const filterForm = ref({
 
 function getActionBadgeClass(action: string) {
   const actionMap: Record<string, string> = {
-    'login': 'bg-blue-100 text-blue-700',
-    'logout': 'bg-gray-100 text-gray-700',
-    'register': 'bg-green-100 text-green-700',
-    'filter': 'bg-purple-100 text-purple-700',
-    'user_create': 'bg-red-100 text-red-700',
-    'user_update': 'bg-yellow-100 text-yellow-700',
-    'user_delete': 'bg-red-100 text-red-700',
-    'password_change': 'bg-orange-100 text-orange-700',
-    'password_reset': 'bg-orange-100 text-orange-700',
+    'login': 'badge-info',
+    'logout': 'badge-gray',
+    'register': 'badge-success',
+    'filter': 'badge-success',
+    'user_create': 'badge-danger',
+    'user_update': 'badge-danger',
+    'user_delete': 'badge-danger',
+    'password_change': 'badge-warning',
+    'password_reset': 'badge-warning',
   }
-  return actionMap[action] || 'bg-gray-100 text-gray-700'
+  return actionMap[action] || 'badge-gray'
 }
 
 function getActionText(action: string) {
@@ -57,10 +57,10 @@ function getActionText(action: string) {
 }
 
 function getStatusBadgeClass(status: number | null) {
-  if (!status) return 'bg-gray-100 text-gray-700'
-  if (status >= 200 && status < 300) return 'bg-green-100 text-green-700'
-  if (status >= 400 && status < 500) return 'bg-yellow-100 text-yellow-700'
-  return 'bg-red-100 text-red-700'
+  if (!status) return 'badge-gray'
+  if (status >= 200 && status < 300) return 'badge-success'
+  if (status >= 400 && status < 500) return 'badge-warning'
+  return 'badge-danger'
 }
 
 async function loadLogs() {
@@ -121,90 +121,107 @@ onMounted(() => {
 
 <template>
   <div class="min-h-screen bg-gray-50">
-    <nav class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-16">
-          <div class="flex items-center">
-            <router-link to="/" class="flex items-center gap-3">
-              <div class="w-9 h-9 bg-gradient-to-br from-red-600 to-red-500 rounded-lg flex items-center justify-center">
-                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
-                </svg>
-              </div>
-              <span class="text-xl font-bold text-gray-900">股票分析系统</span>
-            </router-link>
+    <!-- 顶部导航栏 -->
+    <nav class="navbar">
+      <div class="navbar-content">
+        <router-link to="/" class="navbar-brand">
+          <div class="navbar-logo">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+            </svg>
           </div>
-          
-          <div class="flex items-center gap-4">
-            <router-link to="/" class="px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
-              股票筛选
-            </router-link>
-            <router-link to="/profile" class="px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
-              个人中心
-            </router-link>
-            <router-link to="/users" class="px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
-              用户管理
-            </router-link>
-            <router-link to="/logs" class="px-3 py-2 text-sm font-medium text-red-600 bg-red-50 rounded-lg">
-              操作日志
-            </router-link>
-            
-            <div class="flex items-center gap-3 pl-4 border-l border-gray-200">
-              <div class="w-8 h-8 bg-gradient-to-br from-red-600 to-red-500 rounded-full flex items-center justify-center text-white font-medium text-sm">
-                {{ authStore.userInitial }}
-              </div>
-              <span class="text-sm font-medium text-gray-900">{{ authStore.user?.nickname }}</span>
-              <button @click="handleLogout" class="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                退出
-              </button>
+          <span>股票分析系统</span>
+        </router-link>
+        
+        <div class="navbar-menu">
+          <router-link to="/" class="navbar-link">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
+            </svg>
+            股票筛选
+          </router-link>
+          <router-link to="/profile" class="navbar-link">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+            </svg>
+            个人中心
+          </router-link>
+          <router-link to="/users" class="navbar-link">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+            </svg>
+            用户管理
+          </router-link>
+          <router-link to="/logs" class="navbar-link active">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
+            操作日志
+          </router-link>
+        </div>
+        
+        <div class="navbar-user">
+          <div class="user-info">
+            <div class="user-avatar">
+              {{ authStore.userInitial }}
             </div>
+            <span class="user-name">{{ authStore.user?.nickname }}</span>
           </div>
+          <button @click="handleLogout" class="btn btn-secondary btn-sm">
+            <svg style="width: 16px; height: 16px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+            </svg>
+            退出
+          </button>
         </div>
       </div>
     </nav>
     
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div class="mb-8">
-        <h1 class="text-2xl font-bold text-gray-900">操作日志</h1>
-        <p class="text-gray-600 mt-1">查看系统操作记录和统计信息</p>
+    <main class="main-container">
+      <!-- 页面标题 -->
+      <div class="page-header">
+        <h1 class="page-title">操作日志</h1>
+        <p class="page-subtitle">查看系统操作记录和统计信息</p>
       </div>
       
-      <div class="grid grid-cols-1 sm:grid-cols-4 gap-6 mb-8">
-        <div class="bg-white rounded-xl shadow-sm p-6">
-          <p class="text-sm text-gray-500">总请求数</p>
-          <p class="text-3xl font-bold text-gray-900 mt-1">{{ stats?.total_requests?.toLocaleString() || 0 }}</p>
+      <!-- 统计卡片 -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">总请求数</div>
+          <div class="stat-value">{{ stats?.total_requests?.toLocaleString() || 0 }}</div>
         </div>
-        <div class="bg-white rounded-xl shadow-sm p-6">
-          <p class="text-sm text-gray-500">活跃用户</p>
-          <p class="text-3xl font-bold text-gray-900 mt-1">{{ stats?.unique_users || 0 }}</p>
+        <div class="stat-card">
+          <div class="stat-label">今日请求</div>
+          <div class="stat-value">{{ stats?.by_action?.['filter'] || 0 }}</div>
         </div>
-        <div class="bg-white rounded-xl shadow-sm p-6">
-          <p class="text-sm text-gray-500">今日请求</p>
-          <p class="text-3xl font-bold text-gray-900 mt-1">{{ stats?.by_action?.['filter'] || 0 }}</p>
+        <div class="stat-card">
+          <div class="stat-label">活跃用户</div>
+          <div class="stat-value">{{ stats?.unique_users || 0 }}</div>
         </div>
-        <div class="bg-white rounded-xl shadow-sm p-6">
-          <p class="text-sm text-gray-500">错误率</p>
-          <p class="text-3xl font-bold text-gray-900 mt-1">0.3%</p>
+        <div class="stat-card">
+          <div class="stat-label">错误率</div>
+          <div class="stat-value">0.3%</div>
         </div>
       </div>
       
-      <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
-        <form @submit.prevent="handleFilter" class="grid grid-cols-1 sm:grid-cols-4 gap-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">用户ID</label>
+      <!-- 筛选表单 -->
+      <div class="filter-card">
+        <form @submit.prevent="handleFilter" class="filter-grid">
+          <div class="form-group">
+            <label class="label">用户ID</label>
             <input
               v-model="filterForm.user_id"
               type="number"
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              class="input"
               placeholder="全部用户"
             />
           </div>
           
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">操作类型</label>
+          <div class="form-group">
+            <label class="label">操作类型</label>
             <select
               v-model="filterForm.action"
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              class="input"
             >
               <option value="">全部操作</option>
               <option value="login">登录</option>
@@ -216,30 +233,30 @@ onMounted(() => {
             </select>
           </div>
           
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">开始时间</label>
+          <div class="form-group">
+            <label class="label">开始时间</label>
             <input
               v-model="filterForm.start_date"
               type="date"
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              class="input"
             />
           </div>
           
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">结束时间</label>
+          <div class="form-group">
+            <label class="label">结束时间</label>
             <input
               v-model="filterForm.end_date"
               type="date"
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              class="input"
             />
           </div>
           
-          <div class="sm:col-span-4 flex gap-3">
+          <div class="filter-actions">
             <button
               type="submit"
-              class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors flex items-center gap-2"
+              class="btn btn-primary"
             >
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg style="width: 18px; height: 18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
               </svg>
               查询
@@ -247,9 +264,9 @@ onMounted(() => {
             <button
               type="button"
               @click="handleReset"
-              class="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-2"
+              class="btn btn-secondary"
             >
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg style="width: 18px; height: 18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
               </svg>
               重置
@@ -258,44 +275,43 @@ onMounted(() => {
         </form>
       </div>
       
-      <div class="bg-white rounded-xl shadow-sm overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
+      <!-- 日志表格 -->
+      <div class="table-container">
+        <table class="table">
+          <thead>
             <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">用户</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作类型</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">API 路径</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">IP 地址</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">状态码</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作时间</th>
+              <th>ID</th>
+              <th>用户</th>
+              <th>操作类型</th>
+              <th>API 路径</th>
+              <th>IP 地址</th>
+              <th>状态码</th>
+              <th>操作时间</th>
             </tr>
           </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
-            <tr v-for="log in logs" :key="log.id" class="hover:bg-gray-50">
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ log.id }}</td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ log.username || '-' }}</td>
-              <td class="px-6 py-4 whitespace-nowrap">
+          <tbody>
+            <tr v-for="log in logs" :key="log.id">
+              <td>{{ log.id }}</td>
+              <td><strong>{{ log.username || '-' }}</strong></td>
+              <td>
                 <span 
-                  class="px-2 py-1 text-xs font-medium rounded-full"
+                  class="badge"
                   :class="getActionBadgeClass(log.action)"
                 >
                   {{ getActionText(log.action) }}
                 </span>
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">{{ log.resource || '-' }}</td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ log.ip_address || '-' }}</td>
-              <td class="px-6 py-4 whitespace-nowrap">
+              <td><code class="log-code">{{ log.resource || '-' }}</code></td>
+              <td>{{ log.ip_address || '-' }}</td>
+              <td>
                 <span 
-                  class="px-2 py-1 text-xs font-medium rounded-full"
+                  class="badge"
                   :class="getStatusBadgeClass(log.status_code)"
                 >
                   {{ log.status_code || '-' }}
                 </span>
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {{ log.created_at?.replace('T', ' ').split('.')[0] }}
-              </td>
+              <td>{{ log.created_at?.replace('T', ' ').split('.')[0] }}</td>
             </tr>
           </tbody>
         </table>
