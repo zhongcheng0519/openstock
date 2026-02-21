@@ -1,113 +1,95 @@
-# AGENTS.md - OpenStock 股票分析系统
+# AGENTS.md - OpenStock
 
-This document provides guidelines for AI agents working on the OpenStock codebase.
+Guidelines for AI agents working on this stock analysis platform.
 
-## Project Overview
+## Tech Stack
 
-OpenStock is a stock analysis platform with:
-- **Backend**: Python FastAPI + SQLAlchemy 2.0 (async) + PostgreSQL
-- **Frontend**: Vue 3 + TypeScript + Tailwind CSS + Element Plus
+- **Backend**: Python 3.10+ / FastAPI / SQLAlchemy 2.0 (async) / PostgreSQL / Alembic
+- **Frontend**: Vue 3 / TypeScript / Tailwind CSS 4 / Element Plus / Pinia
 - **Package Managers**: uv (Python), npm (Node.js)
 
-## Build/Lint/Test Commands
+## Commands
 
-### Backend (Python)
+### Backend
 
 ```bash
 cd backend
 
-# Install dependencies
+# Dependencies
 uv pip install -e .
 
-# Run development server
+# Development server
 uv run python -m app.main
 
 # Database migrations
-uv run alembic upgrade head              # Apply migrations
-uv run alembic downgrade -1              # Rollback one migration
-uv run alembic revision --autogenerate -m "description"  # Create new migration
+uv run alembic upgrade head                           # Apply migrations
+uv run alembic downgrade -1                           # Rollback one
+uv run alembic revision --autogenerate -m "msg"       # Create new
 
-# Testing (pytest)
-uv run pytest                            # Run all tests
-uv run pytest path/to/test_file.py       # Run specific test file
-uv run pytest -k "test_name"             # Run tests matching pattern
-uv run pytest -x                         # Stop on first failure
-uv run pytest -v                         # Verbose output
-
-# Type checking
-# (No mypy configured - rely on IDE/strict type hints)
+# Testing
+uv run pytest                                         # All tests
+uv run pytest tests/test_file.py                      # Single file
+uv run pytest tests/test_file.py::test_name           # Single test
+uv run pytest -k "pattern"                            # Match pattern
+uv run pytest -x -v                                   # Stop on first, verbose
 ```
 
-### Frontend (Vue/TypeScript)
+### Frontend
 
 ```bash
 cd frontend
 
-# Install dependencies
+# Dependencies
 npm install
 
 # Development
-npm run dev                              # Start dev server (Vite)
+npm run dev                                           # Start Vite dev server
 
-# Building
-npm run build                            # Full build with type check
-npm run build-only                       # Build without type check
-npm run type-check                       # TypeScript check only
+# Build
+npm run build                                         # Full build (type-check + build)
+npm run build-only                                    # Build only
+npm run type-check                                    # TypeScript only
 
 # Linting & Formatting
-npm run lint                             # Run all linters (oxlint + eslint)
-npm run lint:oxlint                      # Run oxlint only
-npm run lint:eslint                      # Run ESLint only
-npm run format                           # Format with Prettier
-
-# Testing
-npm run test                             # Run all tests (if configured)
+npm run lint                                          # oxlint + eslint
+npm run lint:oxlint                                   # Oxlint only
+npm run lint:eslint                                   # ESLint only
+npm run format                                        # Prettier
 ```
 
-### Docker (Full Stack)
+### Docker
 
 ```bash
-# Development via Docker
-make up-d                                # Start all services in background
-make down                                # Stop all services
-make logs                                # View logs
-make restart                             # Restart services
-make migrate                             # Run DB migrations
-make shell-backend                       # Enter backend container
-make test                                # Run backend tests in container
+make up-d                                             # Start services (background)
+make down                                             # Stop services
+make logs                                             # View logs
+make migrate                                          # Run migrations
+make shell-backend                                    # Backend container shell
+make test                                             # Run backend tests in container
 ```
 
-## Code Style Guidelines
+## Code Style
 
-### Python (Backend)
+### Python
 
-**Imports** - Grouped and ordered:
+**Imports** (grouped, ordered):
 ```python
 # 1. Standard library
-from datetime import date, datetime
-from typing import Optional
+from datetime import date
 
-# 2. Third-party packages
-from fastapi import FastAPI, HTTPException
-from sqlalchemy import select, and_
+# 2. Third-party
+from fastapi import HTTPException
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-# 3. Internal modules (use absolute imports from `app`)
-from app.core.config import get_settings
+# 3. Internal (absolute imports from `app`)
+from app.db.base import get_db
 from app.models.stock import Stock
 ```
 
-**Naming Conventions**:
-- Files: `snake_case.py`
-- Classes: `PascalCase`
-- Functions/Variables: `snake_case`
-- Constants: `UPPER_SNAKE_CASE`
-- Private: `_leading_underscore`
+**Naming**: Files `snake_case.py`, Classes `PascalCase`, Functions/Variables `snake_case`, Constants `UPPER_SNAKE_CASE`
 
-**Type Hints**:
-- Use Python 3.10+ union syntax: `str | None` instead of `Optional[str]`
-- Always type function parameters and return values
-- Use `Mapped[T]` for SQLAlchemy model columns
+**Types**: Use `str | None` (not `Optional[str]`), always annotate parameters and return values. SQLAlchemy: `Mapped[str]`
 
 **SQLAlchemy Models**:
 ```python
@@ -120,59 +102,48 @@ class Stock(Base):
     area: Mapped[str | None] = mapped_column(String(100), nullable=True)
 ```
 
-**Error Handling**:
-- Use FastAPI's `HTTPException` for API errors
-- Log exceptions before raising HTTP errors
-- Return meaningful error messages in Chinese for user-facing errors
+**Pydantic Schemas**:
+```python
+class UserRequest(BaseModel):
+    username: str = Field(..., min_length=3, description="用户名")
+    email: str | None = Field(default=None, description="邮箱")
+    
+    class Config:
+        from_attributes = True
+```
 
-### TypeScript/Vue (Frontend)
+**Error Handling**: Use `HTTPException`, Chinese messages for user-facing errors
+
+### TypeScript/Vue
 
 **Imports**:
 ```typescript
-// 1. Vue/core libraries
-import { ref, reactive, computed } from 'vue'
-import { useRouter } from 'vue-router'
-
+// 1. Vue/core
+import { ref, reactive } from 'vue'
 // 2. Third-party
 import { ElMessage } from 'element-plus'
-
-// 3. Internal (@/ alias maps to ./src)
+// 3. Internal (@/ -> ./src/)
 import { strategyApi } from '@/api/client'
 import type { DailyQuote } from '@/api/client'
 ```
 
-**Naming Conventions**:
-- Files: `PascalCase.vue` for components, `camelCase.ts` for utilities
-- Components: `PascalCase`
-- Composables: `useCamelCase`
-- Types/Interfaces: `PascalCase`
-- Variables: `camelCase`
-- Constants: `UPPER_SNAKE_CASE`
+**Naming**: Components `PascalCase.vue`, Utilities `camelCase.ts`, Composables `useCamelCase`, Types `PascalCase`
 
-**Vue 3 Composition API Pattern**:
+**Vue 3 Composition API**:
 ```vue
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
-
-// Type imports
+import { ElMessage } from 'element-plus'
 import type { DailyQuote } from '@/api/client'
 
-// Reactive state
 const loading = ref(false)
 const results = ref<DailyQuote[]>([])
+const form = reactive({ trade_date: '', min_pct: -2 })
 
-// Reactive object for forms
-const filterForm = reactive({
-  trade_date: '',
-  min_pct: -2,
-  max_pct: 5,
-})
-
-// Async handlers with error handling
-const handleFilter = async () => {
+const handleSubmit = async () => {
   loading.value = true
   try {
-    const response = await strategyApi.pctFilter(filterForm)
+    const response = await strategyApi.filter(form)
     results.value = response.data.data
   } catch (error: any) {
     ElMessage.error(error.message || '操作失败')
@@ -183,51 +154,32 @@ const handleFilter = async () => {
 </script>
 ```
 
-**Error Handling**:
-- Use `ElMessage` from Element Plus for user notifications
-- Always wrap async calls in try-catch
-- Use `finally` to reset loading states
+**Error Handling**: Use `ElMessage`, always try-catch async operations, reset loading in `finally`
 
 ## Project Structure
 
 ```
 openstock/
-├── backend/
-│   ├── app/
-│   │   ├── api/           # API routes & schemas
-│   │   ├── core/          # Config (Settings)
-│   │   ├── db/            # Database setup (base.py)
-│   │   ├── models/        # SQLAlchemy models
-│   │   ├── services/      # Business logic
-│   │   └── main.py        # App entry
-│   ├── alembic/           # DB migrations
-│   └── pyproject.toml     # Dependencies
-│
-├── frontend/
-│   ├── src/
-│   │   ├── api/           # API client
-│   │   ├── components/    # Vue components
-│   │   ├── views/         # Page components
-│   │   ├── router/        # Vue Router config
-│   │   ├── stores/        # Pinia stores
-│   │   └── main.ts        # Entry point
-│   └── package.json
-│
-└── Makefile               # Common commands
+├── backend/app/{api,core,db,models,services}/
+├── backend/alembic/
+├── frontend/src/{api,components,views,router,stores}/
+└── Makefile
 ```
 
-## Key Configuration Files
+## Key Files
 
-- `backend/pyproject.toml` - Python deps, no lint tools configured
-- `frontend/eslint.config.ts` - ESLint + Vue + TypeScript + Oxlint
-- `frontend/.prettierrc.json` - Prettier: no semis, single quotes, 100 width
-- `frontend/tsconfig.app.json` - Path alias `@/` → `./src/`
+| File | Purpose |
+|------|---------|
+| `backend/pyproject.toml` | Python dependencies |
+| `frontend/eslint.config.ts` | ESLint + Vue + TS + Oxlint |
+| `frontend/.prettierrc.json` | No semis, single quotes, width 100 |
+| `frontend/tsconfig.app.json` | Path alias `@/` → `./src/` |
 
-## Notes for Agents
+## Notes
 
-1. **Use Chinese comments** for business logic (project language convention)
-2. **Prefer SQLAlchemy 2.0 style** with `Mapped[]` and `mapped_column()`
-3. **Use Element Plus components** for UI consistency
-4. **Handle loading states** - always set/clear loading flags in async operations
-5. **No trailing semicolons** in TypeScript (per Prettier config)
-6. **Single quotes** preferred in TypeScript
+1. **Chinese comments** for business logic
+2. **SQLAlchemy 2.0 style**: `Mapped[]`, `mapped_column()`
+3. **Element Plus** for UI components
+4. **Always manage loading states** in async operations
+5. **No semicolons** in TypeScript
+6. **Single quotes** in TypeScript

@@ -36,17 +36,17 @@ async function handleLogin() {
 </script>
 
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 via-red-100 to-red-200 p-4">
-    <div class="w-full max-w-md">
-      <div class="bg-white rounded-2xl shadow-xl p-8">
+  <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-100 via-red-200 to-red-300 p-4">
+    <div class="w-full max-w-[440px]">
+      <div class="bg-white rounded-2xl shadow-xl p-12 px-10">
         <div class="text-center mb-8">
-          <div class="w-16 h-16 bg-gradient-to-br from-red-600 to-red-500 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+          <div class="w-16 h-16 bg-gradient-to-br from-red-600 to-red-500 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-[0_4px_14px_0_rgba(220,38,38,0.3)]">
             <svg class="w-9 h-9 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
             </svg>
           </div>
-          <h1 class="text-2xl font-bold text-gray-900">股票分析系统</h1>
-          <p class="text-sm text-gray-500 mt-1">Stock Analysis System</p>
+          <h1 class="text-[1.75rem] font-bold text-gray-900">股票分析系统</h1>
+          <p class="text-sm text-gray-500 mt-2">Stock Analysis System</p>
         </div>
         
         <form @submit.prevent="handleLogin" class="space-y-6">
