@@ -3,7 +3,7 @@
     <AppNavbar />
 
     <!-- 主内容区 -->
-    <main class="main-container">
+    <main class="max-w-[1200px] mx-auto px-6 py-8">
       <PageHeader title="股票筛选" subtitle="根据多维度条件筛选符合投资策略的股票" />
       
       <!-- 筛选条件卡片 -->

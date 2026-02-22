@@ -35,12 +35,8 @@
   --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-  margin: 0;
-}
+/* Note: Tailwind 4 includes Preflight reset which sets margins to 0.
+   Custom styles below should not interfere with utility classes. */
 
 body {
   min-height: 100vh;

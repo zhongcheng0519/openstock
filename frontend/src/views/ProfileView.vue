@@ -4,6 +4,11 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import AppNavbar from '@/components/AppNavbar.vue'
 import PageHeader from '@/components/PageHeader.vue'
+import UserProfileCard from '@/components/UserProfileCard.vue'
+import FormInput from '@/components/FormInput.vue'
+import AlertMessage from '@/components/AlertMessage.vue'
+import SubmitButton from '@/components/SubmitButton.vue'
+import InfoRow from '@/components/InfoRow.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -121,19 +126,12 @@ async function handleChangePassword() {
       
       <div class="grid gap-8" style="grid-template-columns: 280px 1fr;">
         <div class="flex flex-col gap-4">
-          <div class="bg-white rounded-xl shadow p-8 text-center">
-            <div class="w-20 h-20 bg-gradient-to-br from-red-600 to-red-400 rounded-full inline-flex items-center justify-center text-white font-bold text-[2rem] mb-5 shadow-md">
-              {{ authStore.userInitial }}
-            </div>
-            <div class="text-xl font-semibold text-gray-900 mb-1">{{ authStore.user?.nickname }}</div>
-            <div class="text-sm text-gray-500 mb-5">@{{ authStore.user?.username }}</div>
-            <span 
-              class="inline-flex px-[0.875rem] py-1.5 text-[0.8125rem] font-medium rounded-full"
-              :class="authStore.isAdmin ? 'bg-red-50 text-red-600' : 'bg-gray-100 text-gray-600'"
-            >
-              {{ authStore.isAdmin ? '管理员' : '普通用户' }}
-            </span>
-          </div>
+          <UserProfileCard
+            :initial="authStore.userInitial"
+            :nickname="authStore.user?.nickname || ''"
+            :username="authStore.user?.username || ''"
+            :is-admin="authStore.isAdmin"
+          />
         </div>
         
         <div class="flex flex-col gap-6">
@@ -143,66 +141,38 @@ async function handleChangePassword() {
             
             <form @submit.prevent="handleUpdateProfile">
               <div class="grid grid-cols-2 gap-5">
-                <div>
-                  <label class="block text-sm font-medium text-gray-700">
-                    昵称 <span class="text-red-500">*</span>
-                  </label>
-                  <input
-                    v-model="profileForm.nickname"
-                    type="text"
-                    class="w-full px-[0.875rem] py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all placeholder:text-gray-400"
-                    placeholder="请输入昵称"
-                    required
-                  />
-                </div>
+                <FormInput
+                  v-model="profileForm.nickname"
+                  label="昵称"
+                  placeholder="请输入昵称"
+                  :required="true"
+                />
                 
-                <div>
-                  <label class="block text-sm font-medium text-gray-700">
-                    邮箱 <span class="text-red-500">*</span>
-                  </label>
-                  <input
-                    v-model="profileForm.email"
-                    type="email"
-                    class="w-full px-[0.875rem] py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all placeholder:text-gray-400"
-                    placeholder="example@domain.com"
-                    required
-                  />
-                </div>
-              </div>
-              
-              <div class="mt-5">
-                <label class="block text-sm font-medium text-gray-700">手机号</label>
-                <input
-                  v-model="profileForm.phone"
-                  type="tel"
-                  class="w-full px-[0.875rem] py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all placeholder:text-gray-400"
-                  placeholder="11位手机号（选填）"
-                  maxlength="11"
+                <FormInput
+                  v-model="profileForm.email"
+                  label="邮箱"
+                  type="email"
+                  placeholder="example@domain.com"
+                  :required="true"
                 />
               </div>
               
-              <div v-if="profileError" class="mt-5 p-3 bg-red-50 border border-red-200 rounded-lg">
-                <p class="text-sm text-red-600">{{ profileError }}</p>
-              </div>
+              <FormInput
+                v-model="profileForm.phone"
+                label="手机号"
+                type="tel"
+                placeholder="11位手机号（选填）"
+                maxlength="11"
+              />
               
-              <div v-if="profileSuccess" class="mt-5 p-3 bg-green-50 border border-green-200 rounded-lg">
-                <p class="text-sm text-green-600">{{ profileSuccess }}</p>
-              </div>
+              <AlertMessage type="error" :message="profileError" />
+              <AlertMessage type="success" :message="profileSuccess" />
               
-              <button
-                type="submit"
-                :disabled="profileLoading"
-                class="mt-6 inline-flex items-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-700 hover:shadow-md hover:-translate-y-0.5 text-white text-sm font-medium rounded-lg transition-all disabled:opacity-50 disabled:hover:translate-y-0 border-0 cursor-pointer"
-              >
-                <svg v-if="!profileLoading" class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                </svg>
-                <svg v-else class="animate-spin w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                保存修改
-              </button>
+              <SubmitButton
+                :loading="profileLoading"
+                text="保存修改"
+                icon="save"
+              />
             </form>
           </div>
           
@@ -211,72 +181,43 @@ async function handleChangePassword() {
             <h2 class="text-lg font-semibold text-gray-900 mb-6 pb-3 border-b-2 border-gray-200">修改密码</h2>
             
             <form @submit.prevent="handleChangePassword">
-              <div>
-                <label class="block text-sm font-medium text-gray-700">
-                  当前密码 <span class="text-red-500">*</span>
-                </label>
-                <input
-                  v-model="passwordForm.oldPassword"
+              <FormInput
+                v-model="passwordForm.oldPassword"
+                label="当前密码"
+                type="password"
+                placeholder="请输入当前密码"
+                autocomplete="current-password"
+                :required="true"
+              />
+              
+              <div class="grid grid-cols-2 gap-5 mt-5">
+                <FormInput
+                  v-model="passwordForm.newPassword"
+                  label="新密码"
                   type="password"
-                  class="w-full px-[0.875rem] py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all placeholder:text-gray-400"
-                  placeholder="请输入当前密码"
-                  autocomplete="current-password"
-                  required
+                  placeholder="至少8位"
+                  autocomplete="new-password"
+                  :required="true"
+                />
+                
+                <FormInput
+                  v-model="passwordForm.confirmPassword"
+                  label="确认新密码"
+                  type="password"
+                  placeholder="再次输入新密码"
+                  autocomplete="new-password"
+                  :required="true"
                 />
               </div>
               
-              <div class="grid grid-cols-2 gap-5 mt-5">
-                <div>
-                  <label class="block text-sm font-medium text-gray-700">
-                    新密码 <span class="text-red-500">*</span>
-                  </label>
-                  <input
-                    v-model="passwordForm.newPassword"
-                    type="password"
-                    class="w-full px-[0.875rem] py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all placeholder:text-gray-400"
-                    placeholder="至少8位"
-                    autocomplete="new-password"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label class="block text-sm font-medium text-gray-700">
-                    确认新密码 <span class="text-red-500">*</span>
-                  </label>
-                  <input
-                    v-model="passwordForm.confirmPassword"
-                    type="password"
-                    class="w-full px-[0.875rem] py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all placeholder:text-gray-400"
-                    placeholder="再次输入新密码"
-                    autocomplete="new-password"
-                    required
-                  />
-                </div>
-              </div>
+              <AlertMessage type="error" :message="passwordError" />
+              <AlertMessage type="success" :message="passwordSuccess" />
               
-              <div v-if="passwordError" class="mt-5 p-3 bg-red-50 border border-red-200 rounded-lg">
-                <p class="text-sm text-red-600">{{ passwordError }}</p>
-              </div>
-              
-              <div v-if="passwordSuccess" class="mt-5 p-3 bg-green-50 border border-green-200 rounded-lg">
-                <p class="text-sm text-green-600">{{ passwordSuccess }}</p>
-              </div>
-              
-              <button
-                type="submit"
-                :disabled="passwordLoading"
-                class="mt-6 inline-flex items-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-700 hover:shadow-md hover:-translate-y-0.5 text-white text-sm font-medium rounded-lg transition-all disabled:opacity-50 disabled:hover:translate-y-0 border-0 cursor-pointer"
-              >
-                <svg v-if="!passwordLoading" class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
-                </svg>
-                <svg v-else class="animate-spin w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                修改密码
-              </button>
+              <SubmitButton
+                :loading="passwordLoading"
+                text="修改密码"
+                icon="password"
+              />
             </form>
           </div>
           
@@ -285,22 +226,24 @@ async function handleChangePassword() {
             <h2 class="text-lg font-semibold text-gray-900 mb-6 pb-3 border-b-2 border-gray-200">账号信息</h2>
             
             <div class="grid gap-0">
-              <div class="flex justify-between py-4 border-b border-gray-200">
-                <span class="text-sm text-gray-500">用户名</span>
-                <span class="text-sm font-medium text-gray-900">{{ authStore.user?.username }}</span>
-              </div>
-              <div class="flex justify-between py-4 border-b border-gray-200">
-                <span class="text-sm text-gray-500">角色</span>
-                <span class="text-sm font-medium text-gray-900">{{ authStore.isAdmin ? '管理员' : '普通用户' }}</span>
-              </div>
-              <div class="flex justify-between py-4 border-b border-gray-200">
-                <span class="text-sm text-gray-500">账号状态</span>
-                <span class="inline-flex px-2.5 py-1 text-xs font-medium bg-green-100 text-green-700 rounded-full">正常</span>
-              </div>
-              <div class="flex justify-between py-4">
-                <span class="text-sm text-gray-500">注册时间</span>
-                <span class="text-sm font-medium text-gray-900">{{ authStore.user?.created_at?.split('T')[0] || '2024-01-01' }}</span>
-              </div>
+              <InfoRow
+                label="用户名"
+                :value="authStore.user?.username || ''"
+              />
+              <InfoRow
+                label="角色"
+                :value="authStore.isAdmin ? '管理员' : '普通用户'"
+              />
+              <InfoRow
+                label="账号状态"
+                value="正常"
+                :badge="true"
+              />
+              <InfoRow
+                label="注册时间"
+                :value="authStore.user?.created_at?.split('T')[0] || '2024-01-01'"
+                :is-last="true"
+              />
             </div>
           </div>
         </div>

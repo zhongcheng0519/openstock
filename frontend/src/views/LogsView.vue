@@ -118,7 +118,7 @@ onMounted(() => {
   <div class="min-h-screen bg-gray-50">
     <AppNavbar />
     
-    <main class="main-container">
+    <main class="max-w-[1200px] mx-auto px-6 py-8">
       <PageHeader title="操作日志" subtitle="查看系统操作记录和统计信息" />
       
       <!-- 统计卡片 -->

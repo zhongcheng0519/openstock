@@ -137,7 +137,7 @@ onMounted(() => {
   <div class="min-h-screen bg-gray-50">
     <AppNavbar />
     
-    <main class="main-container">
+    <main class="max-w-[1200px] mx-auto px-6 py-8">
       <PageHeader title="用户管理" subtitle="管理系统用户账号和权限">
         <template #actions>
           <button @click="showCreateModal = true" class="btn btn-primary">
