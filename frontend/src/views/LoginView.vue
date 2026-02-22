@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { APP_CONFIG } from '@/config/app'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -45,7 +46,7 @@ async function handleLogin() {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
             </svg>
           </div>
-          <h1 class="logo-title">股票分析系统</h1>
+          <h1 class="logo-title">{{ APP_CONFIG.title }}</h1>
           <p class="logo-subtitle">Stock Analysis System</p>
         </div>
         
@@ -117,7 +118,7 @@ async function handleLogin() {
       </div>
       
       <p class="login-footer">
-        © 2024 股票分析系统 v1.0
+        © {{ APP_CONFIG.copyright }} {{ APP_CONFIG.title }} v{{ APP_CONFIG.version }}
       </p>
     </div>
   </div>

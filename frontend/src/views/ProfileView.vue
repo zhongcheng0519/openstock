@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import AppNavbar from '@/components/AppNavbar.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -109,89 +110,11 @@ async function handleChangePassword() {
   }
 }
 
-async function handleLogout() {
-  if (confirm('确定要退出登录吗？')) {
-    await authStore.logout()
-    router.push('/login')
-  }
-}
-</script>
+onMounted(() => {
 
 <template>
   <div class="min-h-screen bg-gray-50">
-    <nav class="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-[100]">
-      <div class="max-w-[1400px] mx-auto px-6">
-        <div class="flex items-center justify-between h-16">
-          <router-link to="/" class="flex items-center gap-3 text-gray-900 no-underline">
-            <div class="w-9 h-9 bg-gradient-to-br from-red-600 to-red-400 rounded-lg flex items-center justify-center shadow-sm">
-              <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
-              </svg>
-            </div>
-            <span class="text-xl font-bold">股票分析系统</span>
-          </router-link>
-          
-          <div class="flex items-center gap-2">
-            <router-link 
-              to="/" 
-              class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900 rounded-lg transition-all no-underline"
-            >
-              <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
-              </svg>
-              股票筛选
-            </router-link>
-            <router-link 
-              to="/profile" 
-              class="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-red-50 text-red-600 rounded-lg no-underline"
-            >
-              <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-              </svg>
-              个人中心
-            </router-link>
-            <template v-if="authStore.isAdmin">
-              <router-link 
-                to="/users" 
-                class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900 rounded-lg transition-all no-underline"
-              >
-                <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
-                </svg>
-                用户管理
-              </router-link>
-              <router-link 
-                to="/logs" 
-                class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900 rounded-lg transition-all no-underline"
-              >
-                <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                </svg>
-                操作日志
-              </router-link>
-            </template>
-            
-            <div class="flex items-center gap-4 ml-4 pl-4 border-l border-gray-200">
-              <div class="flex items-center gap-2">
-                <div class="w-8 h-8 bg-gradient-to-br from-red-600 to-red-400 rounded-full flex items-center justify-center text-white font-semibold text-sm shadow-sm">
-                  {{ authStore.userInitial }}
-                </div>
-                <span class="text-sm font-medium text-gray-900">{{ authStore.user?.nickname }}</span>
-              </div>
-              <button 
-                @click="handleLogout" 
-                class="flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 hover:shadow-sm transition-all bg-transparent cursor-pointer"
-              >
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
-                </svg>
-                退出
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </nav>
+    <AppNavbar />
     
     <main class="max-w-[1200px] mx-auto px-6 py-8">
       <div class="mb-10">

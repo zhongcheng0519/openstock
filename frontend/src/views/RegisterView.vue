@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { APP_TITLE } from '@/config/app'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -114,7 +115,7 @@ async function handleRegister() {
             系统初始化
           </div>
           <h1 class="register-title">创建管理员账号</h1>
-          <p class="register-subtitle">欢迎使用股票分析系统！请创建第一个管理员账号以开始使用</p>
+          <p class="register-subtitle">欢迎使用{{ APP_TITLE }}！请创建第一个管理员账号以开始使用</p>
         </div>
         
         <form @submit.prevent="handleRegister" class="form-grid">

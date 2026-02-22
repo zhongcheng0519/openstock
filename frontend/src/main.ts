@@ -8,8 +8,11 @@ import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 
 import App from './App.vue'
 import router from './router'
+import { APP_CONFIG } from '@/config/app'
 
 const app = createApp(App)
+
+document.title = APP_CONFIG.title
 
 // 注册所有图标
 for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
