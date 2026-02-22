@@ -4,11 +4,7 @@
 
     <!-- 主内容区 -->
     <main class="main-container">
-      <!-- 页面标题 -->
-      <div class="page-header">
-        <h1 class="page-title">股票筛选</h1>
-        <p class="page-subtitle">根据多维度条件筛选符合投资策略的股票</p>
-      </div>
+      <PageHeader title="股票筛选" subtitle="根据多维度条件筛选符合投资策略的股票" />
       
       <!-- 筛选条件卡片 -->
       <div class="filter-card">
@@ -199,6 +195,7 @@ import { reactive, ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { strategyApi, type DailyQuote } from '@/api/client'
 import AppNavbar from '@/components/AppNavbar.vue'
+import PageHeader from '@/components/PageHeader.vue'
 
 const loading = ref(false)
 const searched = ref(false)

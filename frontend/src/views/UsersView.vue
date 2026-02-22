@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { adminApi, type UserResponse } from '@/api/client'
 import AppNavbar from '@/components/AppNavbar.vue'
+import PageHeader from '@/components/PageHeader.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -137,22 +138,16 @@ onMounted(() => {
     <AppNavbar />
     
     <main class="main-container">
-      <!-- 页面标题 -->
-      <div class="page-header">
-        <div class="page-title-group">
-          <h1 class="page-title">用户管理</h1>
-          <p class="page-subtitle">管理系统用户账号和权限</p>
-        </div>
-        <button
-          @click="showCreateModal = true"
-          class="btn btn-primary"
-        >
-          <svg style="width: 18px; height: 18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-          </svg>
-          创建用户
-        </button>
-      </div>
+      <PageHeader title="用户管理" subtitle="管理系统用户账号和权限">
+        <template #actions>
+          <button @click="showCreateModal = true" class="btn btn-primary">
+            <svg style="width: 18px; height: 18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+            </svg>
+            创建用户
+          </button>
+        </template>
+      </PageHeader>
       
       <!-- 统计卡片 -->
       <div class="stats-grid">

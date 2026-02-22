@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { adminApi, type UserLogResponse, type LogStatisticsResponse } from '@/api/client'
 import AppNavbar from '@/components/AppNavbar.vue'
+import PageHeader from '@/components/PageHeader.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -118,11 +119,7 @@ onMounted(() => {
     <AppNavbar />
     
     <main class="main-container">
-      <!-- 页面标题 -->
-      <div class="page-header">
-        <h1 class="page-title">操作日志</h1>
-        <p class="page-subtitle">查看系统操作记录和统计信息</p>
-      </div>
+      <PageHeader title="操作日志" subtitle="查看系统操作记录和统计信息" />
       
       <!-- 统计卡片 -->
       <div class="stats-grid">

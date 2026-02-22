@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import AppNavbar from '@/components/AppNavbar.vue'
+import PageHeader from '@/components/PageHeader.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -109,18 +110,14 @@ async function handleChangePassword() {
     passwordLoading.value = false
   }
 }
-
-onMounted(() => {
+</script>
 
 <template>
   <div class="min-h-screen bg-gray-50">
     <AppNavbar />
     
     <main class="max-w-[1200px] mx-auto px-6 py-8">
-      <div class="mb-10">
-        <h1 class="text-[1.875rem] font-bold text-gray-900 mb-2">个人中心</h1>
-        <p class="text-base text-gray-600 mt-2">管理您的个人信息和账号设置</p>
-      </div>
+      <PageHeader title="个人中心" subtitle="管理您的个人信息和账号设置" />
       
       <div class="grid gap-8" style="grid-template-columns: 280px 1fr;">
         <div class="flex flex-col gap-4">
