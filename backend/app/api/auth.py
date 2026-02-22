@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 import bcrypt
 from jose import jwt
+from loguru import logger
 
 from app.db.base import get_db
 from app.models.stock import User, UserLog
@@ -191,6 +192,7 @@ async def login(
     
     if not user or not verify_password(data.password, user.password_hash):
         await log_user_action(db, None, "login_failed", request, 401)
+        logger.warning(f"登录失败: 用户名 {data.username}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="用户名或密码错误"
@@ -206,6 +208,7 @@ async def login(
     access_token = create_access_token(data={"sub": str(user.id)})
     
     await log_user_action(db, user.id, "login", request, 200)
+    logger.info(f"用户 {user.username} 登录成功")
     
     return TokenResponse(
         access_token=access_token,

@@ -3,6 +3,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_
+from loguru import logger
 
 from app.db.base import get_db
 from app.models.stock import Stock, DailyQuote, DailyBasic, Moneyflow

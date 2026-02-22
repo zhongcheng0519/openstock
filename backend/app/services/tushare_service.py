@@ -4,6 +4,7 @@ from datetime import date, timedelta, datetime
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, insert
+from loguru import logger
 
 from app.core.config import get_settings
 from app.models.stock import Stock, DailyQuote, DailyBasic, Moneyflow, TradeCalendar
@@ -23,12 +24,16 @@ class TushareService:
         Returns:
             同步的股票数量
         """
+        logger.info("开始同步股票基础信息")
         # 获取所有股票基础信息
         df = self.pro.stock_basic(exchange='', list_status='L', 
                                    fields='ts_code,symbol,name,area,industry,list_date')
         
         if df is None or df.empty:
+            logger.warning("未获取到股票基础信息数据")
             return 0
+        
+        logger.info(f"获取到 {len(df)} 条股票基础信息")
         
         # 转换为字典列表
         stocks_data = df.to_dict('records')
@@ -63,6 +68,7 @@ class TushareService:
                 count += 1
         
         await db.commit()
+        logger.info(f"股票基础信息同步完成，新增 {count} 条")
         return count
     
     async def sync_daily_quotes(self, db: AsyncSession, trade_date: date) -> int:
@@ -78,10 +84,13 @@ class TushareService:
         # 格式化日期为字符串 (YYYYMMDD)
         date_str = trade_date.strftime('%Y%m%d')
         
+        logger.info(f"开始同步日线行情: {date_str}")
+        
         # 从 Tushare 获取数据
         df = self.pro.daily(trade_date=date_str)
         
         if df is None or df.empty:
+            logger.warning(f"未获取到日期 {date_str} 的日线行情数据")
             return 0
         
         # 检查是否已有数据
@@ -116,6 +125,7 @@ class TushareService:
             await db.execute(insert(DailyQuote), quotes_data)
             await db.commit()
         
+        logger.info(f"日线行情同步完成: {len(quotes_data)} 条")
         return len(quotes_data)
     
     async def check_data_exists(self, db: AsyncSession, trade_date: date) -> bool:
@@ -137,9 +147,12 @@ class TushareService:
         """
         date_str = trade_date.strftime('%Y%m%d')
         
+        logger.info(f"开始同步每日基本面指标: {date_str}")
+        
         df = self.pro.daily_basic(trade_date=date_str)
         
         if df is None or df.empty:
+            logger.warning(f"未获取到日期 {date_str} 的基本面数据")
             return 0
         
         result = await db.execute(
@@ -178,6 +191,7 @@ class TushareService:
             await db.execute(insert(DailyBasic), basics_data)
             await db.commit()
         
+        logger.info(f"每日基本面指标同步完成: {len(basics_data)} 条")
         return len(basics_data)
     
     async def check_basic_data_exists(self, db: AsyncSession, trade_date: date) -> bool:
@@ -199,9 +213,12 @@ class TushareService:
         """
         date_str = trade_date.strftime('%Y%m%d')
         
+        logger.info(f"开始同步资金流向数据: {date_str}")
+        
         df = self.pro.moneyflow(trade_date=date_str)
         
         if df is None or df.empty:
+            logger.warning(f"未获取到日期 {date_str} 的资金流向数据")
             return 0
         
         result = await db.execute(
@@ -242,6 +259,7 @@ class TushareService:
             await db.execute(insert(Moneyflow), moneyflow_data)
             await db.commit()
         
+        logger.info(f"资金流向数据同步完成: {len(moneyflow_data)} 条")
         return len(moneyflow_data)
     
     async def check_moneyflow_data_exists(self, db: AsyncSession, trade_date: date) -> bool:
@@ -280,6 +298,7 @@ class TushareService:
         try:
             df = self.pro.trade_cal(exchange='', start_date=start_str, end_date=end_str)
         except Exception as e:
+            logger.error(f"获取交易日历失败: {e}")
             return 0
         
         if df is None or df.empty:
