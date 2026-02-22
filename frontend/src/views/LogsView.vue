@@ -5,6 +5,12 @@ import { useAuthStore } from '@/stores/auth'
 import { adminApi, type UserLogResponse, type LogStatisticsResponse } from '@/api/client'
 import AppNavbar from '@/components/AppNavbar.vue'
 import PageHeader from '@/components/PageHeader.vue'
+import StatsCard from '@/components/StatsCard.vue'
+import FormField from '@/components/FormField.vue'
+import FormSelect from '@/components/FormSelect.vue'
+import ActionButton from '@/components/ActionButton.vue'
+import DataTable from '@/components/DataTable.vue'
+import Badge from '@/components/Badge.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -24,19 +30,19 @@ const filterForm = ref({
   end_date: ''
 })
 
-function getActionBadgeClass(action: string) {
-  const actionMap: Record<string, string> = {
-    'login': 'badge-info',
-    'logout': 'badge-gray',
-    'register': 'badge-success',
-    'filter': 'badge-success',
-    'user_create': 'badge-danger',
-    'user_update': 'badge-danger',
-    'user_delete': 'badge-danger',
-    'password_change': 'badge-warning',
-    'password_reset': 'badge-warning',
+function getActionBadgeClass(action: string): 'success' | 'danger' | 'warning' | 'info' | 'gray' {
+  const actionMap: Record<string, 'success' | 'danger' | 'warning' | 'info' | 'gray'> = {
+    'login': 'info',
+    'logout': 'gray',
+    'register': 'success',
+    'filter': 'success',
+    'user_create': 'danger',
+    'user_update': 'danger',
+    'user_delete': 'danger',
+    'password_change': 'warning',
+    'password_reset': 'warning',
   }
-  return actionMap[action] || 'badge-gray'
+  return actionMap[action] || 'gray'
 }
 
 function getActionText(action: string) {
@@ -58,12 +64,22 @@ function getActionText(action: string) {
   return actionMap[action] || action
 }
 
-function getStatusBadgeClass(status: number | null) {
-  if (!status) return 'badge-gray'
-  if (status >= 200 && status < 300) return 'badge-success'
-  if (status >= 400 && status < 500) return 'badge-warning'
-  return 'badge-danger'
+function getStatusBadgeClass(status: number | null): 'success' | 'danger' | 'warning' | 'gray' {
+  if (!status) return 'gray'
+  if (status >= 200 && status < 300) return 'success'
+  if (status >= 400 && status < 500) return 'warning'
+  return 'danger'
 }
+
+const actionOptions = [
+  { value: '', label: '全部操作' },
+  { value: 'login', label: '登录' },
+  { value: 'logout', label: '登出' },
+  { value: 'filter', label: '股票筛选' },
+  { value: 'user_create', label: '创建用户' },
+  { value: 'user_update', label: '更新用户' },
+  { value: 'user_delete', label: '删除用户' },
+]
 
 async function loadLogs() {
   loading.value = true
@@ -123,144 +139,87 @@ onMounted(() => {
       
       <!-- 统计卡片 -->
       <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-label">总请求数</div>
-          <div class="stat-value">{{ stats?.total_requests?.toLocaleString() || 0 }}</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">今日请求</div>
-          <div class="stat-value">{{ stats?.by_action?.['filter'] || 0 }}</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">活跃用户</div>
-          <div class="stat-value">{{ stats?.unique_users || 0 }}</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">错误率</div>
-          <div class="stat-value">0.3%</div>
-        </div>
+        <StatsCard label="总请求数" :value="stats?.total_requests?.toLocaleString() || 0" />
+        <StatsCard label="今日请求" :value="stats?.by_action?.['filter'] || 0" />
+        <StatsCard label="活跃用户" :value="stats?.unique_users || 0" />
+        <StatsCard label="错误率" value="0.3%" />
       </div>
       
       <!-- 筛选表单 -->
       <div class="filter-card">
         <form @submit.prevent="handleFilter" class="filter-grid">
-          <div class="form-group">
-            <label class="label">用户ID</label>
-            <input
-              v-model="filterForm.user_id"
-              type="number"
-              class="input"
-              placeholder="全部用户"
-            />
-          </div>
+          <FormField
+            v-model="filterForm.user_id"
+            label="用户ID"
+            type="number"
+            placeholder="全部用户"
+          />
           
-          <div class="form-group">
-            <label class="label">操作类型</label>
-            <select
-              v-model="filterForm.action"
-              class="input"
-            >
-              <option value="">全部操作</option>
-              <option value="login">登录</option>
-              <option value="logout">登出</option>
-              <option value="filter">股票筛选</option>
-              <option value="user_create">创建用户</option>
-              <option value="user_update">更新用户</option>
-              <option value="user_delete">删除用户</option>
-            </select>
-          </div>
+          <FormSelect
+            v-model="filterForm.action"
+            label="操作类型"
+            :options="actionOptions"
+          />
           
-          <div class="form-group">
-            <label class="label">开始时间</label>
-            <input
-              v-model="filterForm.start_date"
-              type="date"
-              class="input"
-            />
-          </div>
+          <FormField
+            v-model="filterForm.start_date"
+            label="开始时间"
+            type="date"
+          />
           
-          <div class="form-group">
-            <label class="label">结束时间</label>
-            <input
-              v-model="filterForm.end_date"
-              type="date"
-              class="input"
-            />
-          </div>
+          <FormField
+            v-model="filterForm.end_date"
+            label="结束时间"
+            type="date"
+          />
           
           <div class="filter-actions">
-            <button
+            <ActionButton
               type="submit"
-              class="btn btn-primary"
+              variant="primary"
+              icon="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
             >
-              <svg style="width: 18px; height: 18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-              </svg>
               查询
-            </button>
-            <button
+            </ActionButton>
+            <ActionButton
               type="button"
+              variant="secondary"
+              icon="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
               @click="handleReset"
-              class="btn btn-secondary"
             >
-              <svg style="width: 18px; height: 18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-              </svg>
               重置
-            </button>
+            </ActionButton>
           </div>
         </form>
       </div>
       
       <!-- 日志表格 -->
-      <div class="table-container">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>用户</th>
-              <th>操作类型</th>
-              <th>API 路径</th>
-              <th>IP 地址</th>
-              <th>状态码</th>
-              <th>操作时间</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="log in logs" :key="log.id">
-              <td>{{ log.id }}</td>
-              <td><strong>{{ log.username || '-' }}</strong></td>
-              <td>
-                <span 
-                  class="badge"
-                  :class="getActionBadgeClass(log.action)"
-                >
-                  {{ getActionText(log.action) }}
-                </span>
-              </td>
-              <td><code class="log-code">{{ log.resource || '-' }}</code></td>
-              <td>{{ log.ip_address || '-' }}</td>
-              <td>
-                <span 
-                  class="badge"
-                  :class="getStatusBadgeClass(log.status_code)"
-                >
-                  {{ log.status_code || '-' }}
-                </span>
-              </td>
-              <td>{{ log.created_at?.replace('T', ' ').split('.')[0] }}</td>
-            </tr>
-          </tbody>
-        </table>
-        
-        <div v-if="loading" class="p-8 text-center text-gray-500">
-          加载中...
-        </div>
-        
-        <div v-if="!loading && logs.length === 0" class="p-8 text-center text-gray-500">
-          暂无数据
-        </div>
-      </div>
+      <DataTable :loading="loading" :empty="logs.length === 0" empty-text="暂无数据">
+        <template #header>
+          <tr>
+            <th>ID</th>
+            <th>用户</th>
+            <th>操作类型</th>
+            <th>API 路径</th>
+            <th>IP 地址</th>
+            <th>状态码</th>
+            <th>操作时间</th>
+          </tr>
+        </template>
+        <tr v-for="log in logs" :key="log.id">
+          <td>{{ log.id }}</td>
+          <td><strong>{{ log.username || '-' }}</strong></td>
+          <td>
+            <Badge :variant="getActionBadgeClass(log.action)" :text="getActionText(log.action)" />
+          </td>
+          <td><code class="log-code">{{ log.resource || '-' }}</code></td>
+          <td>{{ log.ip_address || '-' }}</td>
+          <td>
+            <Badge :variant="getStatusBadgeClass(log.status_code)" :text="String(log.status_code || '-')" />
+          </td>
+          <td>{{ log.created_at?.replace('T', ' ').split('.')[0] }}</td>
+        </tr>
+      </DataTable>
     </main>
   </div>
 </template>

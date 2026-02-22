@@ -3,6 +3,9 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { APP_TITLE } from '@/config/app'
+import FormField from '@/components/FormField.vue'
+import PasswordStrength from '@/components/PasswordStrength.vue'
+import AlertMessage from '@/components/AlertMessage.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -18,21 +21,6 @@ const form = ref({
 
 const loading = ref(false)
 const errorMessage = ref('')
-
-const passwordStrength = computed(() => {
-  const pwd = form.value.password
-  if (!pwd) return null
-  
-  let strength = 0
-  if (pwd.length >= 8) strength++
-  if (/[a-z]/.test(pwd) && /[A-Z]/.test(pwd)) strength++
-  if (/\d/.test(pwd)) strength++
-  if (/[^a-zA-Z0-9]/.test(pwd)) strength++
-  
-  if (strength <= 1) return { level: 'weak', text: '弱', color: 'bg-red-500' }
-  if (strength <= 2) return { level: 'medium', text: '中', color: 'bg-yellow-500' }
-  return { level: 'strong', text: '强', color: 'bg-green-500' }
-})
 
 function validateForm() {
   if (!form.value.username.trim()) {
@@ -120,95 +108,63 @@ async function handleRegister() {
         
         <form @submit.prevent="handleRegister" class="form-grid">
           <div class="form-grid form-grid-2">
-            <div class="form-group">
-              <label class="label label-required">
-                用户名
-              </label>
-              <input
-                v-model="form.username"
-                type="text"
-                class="input"
-                placeholder="用于登录"
-              />
-              <p class="text-xs text-gray-500 mt-1">仅支持字母、数字、下划线</p>
-            </div>
+            <FormField
+              v-model="form.username"
+              label="用户名"
+              type="text"
+              placeholder="用于登录"
+              hint="仅支持字母、数字、下划线"
+              required
+            />
             
-            <div class="form-group">
-              <label class="label label-required">
-                昵称
-              </label>
-              <input
-                v-model="form.nickname"
-                type="text"
-                class="input"
-                placeholder="用于显示"
-              />
-            </div>
+            <FormField
+              v-model="form.nickname"
+              label="昵称"
+              type="text"
+              placeholder="用于显示"
+              required
+            />
           </div>
           
           <div class="form-grid form-grid-2">
-            <div class="form-group">
-              <label class="label label-required">
-                密码
-              </label>
-              <input
+            <div>
+              <FormField
                 v-model="form.password"
+                label="密码"
                 type="password"
-                class="input"
                 placeholder="至少8位"
                 autocomplete="new-password"
+                required
               />
-              <div v-if="passwordStrength" class="password-strength" :class="'strength-' + passwordStrength.level">
-                <div class="strength-bar">
-                  <div class="strength-fill"></div>
-                </div>
-                <span class="text-xs" :class="{
-                  'text-red-500': passwordStrength.level === 'weak',
-                  'text-yellow-500': passwordStrength.level === 'medium',
-                  'text-green-500': passwordStrength.level === 'strong'
-                }">{{ passwordStrength.text }}</span>
-              </div>
+              <PasswordStrength :password="form.password" />
             </div>
             
-            <div class="form-group">
-              <label class="label label-required">
-                确认密码
-              </label>
-              <input
-                v-model="form.confirmPassword"
-                type="password"
-                class="input"
-                placeholder="再次输入密码"
-                autocomplete="new-password"
-              />
-            </div>
+            <FormField
+              v-model="form.confirmPassword"
+              label="确认密码"
+              type="password"
+              placeholder="再次输入密码"
+              autocomplete="new-password"
+              required
+            />
           </div>
           
           <div class="form-grid form-grid-2">
-            <div class="form-group">
-              <label class="label label-required">
-                邮箱
-              </label>
-              <input
-                v-model="form.email"
-                type="email"
-                class="input"
-                placeholder="example@domain.com"
-              />
-            </div>
+            <FormField
+              v-model="form.email"
+              label="邮箱"
+              type="email"
+              placeholder="example@domain.com"
+              required
+            />
             
-            <div class="form-group">
-              <label class="label">
-                手机号
-              </label>
-              <input
-                v-model="form.phone"
-                type="tel"
-                class="input"
-                placeholder="11位手机号（选填）"
-                maxlength="11"
-              />
-            </div>
+            <FormField
+              v-model="form.phone"
+              label="手机号"
+              type="tel"
+              placeholder="11位手机号（选填）"
+              :maxlength="11"
+            />
           </div>
           
           <div class="info-box">
@@ -226,9 +182,7 @@ async function handleRegister() {
             </ul>
           </div>
           
-          <div v-if="errorMessage" class="error-message">
-            <p>{{ errorMessage }}</p>
-          </div>
+          <AlertMessage v-if="errorMessage" type="error" :message="errorMessage" />
           
           <button
             type="submit"

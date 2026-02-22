@@ -3,6 +3,8 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { APP_CONFIG } from '@/config/app'
+import FormField from '@/components/FormField.vue'
+import AlertMessage from '@/components/AlertMessage.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -51,45 +53,27 @@ async function handleLogin() {
         </div>
         
         <form @submit.prevent="handleLogin" class="login-form">
-          <div class="form-group">
-            <label class="label label-required">
-              用户名
-            </label>
-            <div class="input-wrapper">
-              <svg class="input-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-              </svg>
-              <input
-                v-model="username"
-                type="text"
-                class="input input-with-icon"
-                placeholder="请输入用户名"
-                autocomplete="username"
-              />
-            </div>
-          </div>
+          <FormField
+            v-model="username"
+            label="用户名"
+            type="text"
+            placeholder="请输入用户名"
+            autocomplete="username"
+            icon="user"
+            required
+          />
           
-          <div class="form-group">
-            <label class="label label-required">
-              密码
-            </label>
-            <div class="input-wrapper">
-              <svg class="input-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-              </svg>
-              <input
-                v-model="password"
-                type="password"
-                class="input input-with-icon"
-                placeholder="请输入密码"
-                autocomplete="current-password"
-              />
-            </div>
-          </div>
+          <FormField
+            v-model="password"
+            label="密码"
+            type="password"
+            placeholder="请输入密码"
+            autocomplete="current-password"
+            icon="password"
+            required
+          />
           
-          <div v-if="errorMessage" class="error-message">
-            <p>{{ errorMessage }}</p>
-          </div>
+          <AlertMessage v-if="errorMessage" type="error" :message="errorMessage" />
           
           <button
             type="submit"

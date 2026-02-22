@@ -5,6 +5,14 @@ import { useAuthStore } from '@/stores/auth'
 import { adminApi, type UserResponse } from '@/api/client'
 import AppNavbar from '@/components/AppNavbar.vue'
 import PageHeader from '@/components/PageHeader.vue'
+import StatsCard from '@/components/StatsCard.vue'
+import DataTable from '@/components/DataTable.vue'
+import Badge from '@/components/Badge.vue'
+import Modal from '@/components/Modal.vue'
+import FormField from '@/components/FormField.vue'
+import FormSelect from '@/components/FormSelect.vue'
+import ActionButton from '@/components/ActionButton.vue'
+import AlertMessage from '@/components/AlertMessage.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -26,6 +34,11 @@ const createForm = ref({
 })
 const createLoading = ref(false)
 const createError = ref('')
+
+const roleOptions = [
+  { value: 'user', label: '普通用户' },
+  { value: 'admin', label: '管理员' },
+]
 
 const stats = computed(() => {
   const totalUsers = users.value.length
@@ -140,173 +153,157 @@ onMounted(() => {
     <main class="max-w-[1200px] mx-auto px-6 py-8">
       <PageHeader title="用户管理" subtitle="管理系统用户账号和权限">
         <template #actions>
-          <button @click="showCreateModal = true" class="btn btn-primary">
-            <svg style="width: 18px; height: 18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-            </svg>
+          <ActionButton
+            variant="primary"
+            icon="M12 4v16m8-8H4"
+            @click="showCreateModal = true"
+          >
             创建用户
-          </button>
+          </ActionButton>
         </template>
       </PageHeader>
       
       <!-- 统计卡片 -->
       <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-label">总用户数</div>
-          <div class="stat-value">{{ total }}</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">活跃用户</div>
-          <div class="stat-value">{{ stats.activeUsers }}</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">管理员</div>
-          <div class="stat-value">{{ stats.adminUsers }}</div>
-        </div>
+        <StatsCard label="总用户数" :value="total" />
+        <StatsCard label="活跃用户" :value="stats.activeUsers" />
+        <StatsCard label="管理员" :value="stats.adminUsers" />
       </div>
       
       <!-- 用户表格 -->
-      <div class="table-container">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>用户名</th>
-              <th>昵称</th>
-              <th>邮箱</th>
-              <th>角色</th>
-              <th>状态</th>
-              <th>创建时间</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="user in users" :key="user.id">
-              <td>{{ user.id }}</td>
-              <td><strong>{{ user.username }}</strong></td>
-              <td>{{ user.nickname }}</td>
-              <td>{{ user.email }}</td>
-              <td>
-                <span 
-                  class="badge"
-                  :class="user.role === 'admin' ? 'badge-danger' : 'badge-info'"
-                >
-                  {{ user.role === 'admin' ? '管理员' : '普通用户' }}
-                </span>
-              </td>
-              <td>
-                <span 
-                  class="badge"
-                  :class="user.is_active ? 'badge-success' : 'badge-gray'"
-                >
-                  {{ user.is_active ? '正常' : '已禁用' }}
-                </span>
-              </td>
-              <td>{{ user.created_at?.split('T')[0] }}</td>
-              <td>
-                <div class="table-actions">
-                  <button
-                    @click="handleResetPassword(user)"
-                    class="action-btn action-btn-primary"
-                  >
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
-                    </svg>
-                    重置
-                  </button>
-                  <button
-                    @click="handleToggleStatus(user)"
-                    class="action-btn action-btn-secondary"
-                  >
-                    {{ user.is_active ? '禁用' : '启用' }}
-                  </button>
-                  <button
-                    v-if="user.id !== authStore.user?.id"
-                    @click="handleDeleteUser(user)"
-                    class="action-btn action-btn-danger"
-                  >
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                    </svg>
-                    删除
-                  </button>
-                  <span v-else class="text-xs text-gray-400">当前用户</span>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      <DataTable :loading="loading" :empty="users.length === 0">
+        <template #header>
+          <tr>
+            <th>ID</th>
+            <th>用户名</th>
+            <th>昵称</th>
+            <th>邮箱</th>
+            <th>角色</th>
+            <th>状态</th>
+            <th>创建时间</th>
+            <th>操作</th>
+          </tr>
+        </template>
+        <tr v-for="user in users" :key="user.id">
+          <td>{{ user.id }}</td>
+          <td><strong>{{ user.username }}</strong></td>
+          <td>{{ user.nickname }}</td>
+          <td>{{ user.email }}</td>
+          <td>
+            <Badge
+              :variant="user.role === 'admin' ? 'danger' : 'info'"
+              :text="user.role === 'admin' ? '管理员' : '普通用户'"
+            />
+          </td>
+          <td>
+            <Badge
+              :variant="user.is_active ? 'success' : 'gray'"
+              :text="user.is_active ? '正常' : '已禁用'"
+            />
+          </td>
+          <td>{{ user.created_at?.split('T')[0] }}</td>
+          <td>
+            <div class="table-actions">
+              <button
+                @click="handleResetPassword(user)"
+                class="action-btn action-btn-primary"
+              >
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
+                </svg>
+                重置
+              </button>
+              <button
+                @click="handleToggleStatus(user)"
+                class="action-btn action-btn-secondary"
+              >
+                {{ user.is_active ? '禁用' : '启用' }}
+              </button>
+              <button
+                v-if="user.id !== authStore.user?.id"
+                @click="handleDeleteUser(user)"
+                class="action-btn action-btn-danger"
+              >
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                </svg>
+                删除
+              </button>
+              <span v-else class="text-xs text-gray-400">当前用户</span>
+            </div>
+          </td>
+        </tr>
+      </DataTable>
     </main>
     
     <!-- 创建用户弹窗 -->
-    <div v-if="showCreateModal" class="modal-overlay" @click.self="showCreateModal = false">
-      <div class="modal" style="width: 600px;">
-        <div class="modal-header">
-          <h3 class="modal-title">创建新用户</h3>
-          <button @click="showCreateModal = false" class="modal-close" style="background: none; border: none; color: var(--gray-400); cursor: pointer; padding: 0;">
-            <svg style="width: 24px; height: 24px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-            </svg>
-          </button>
-        </div>
-        <div class="modal-body">
-          <form @submit.prevent="handleCreateUser">
-            <div class="form-grid form-grid-2">
-              <div class="form-group">
-                <label class="label label-required">用户名</label>
-                <input v-model="createForm.username" type="text" class="input" placeholder="用于登录" />
-              </div>
-              <div class="form-group">
-                <label class="label label-required">昵称</label>
-                <input v-model="createForm.nickname" type="text" class="input" placeholder="用于显示" />
-              </div>
-            </div>
-            
-            <div class="form-grid form-grid-2" style="margin-top: 1rem;">
-              <div class="form-group">
-                <label class="label label-required">邮箱</label>
-                <input v-model="createForm.email" type="email" class="input" placeholder="example@domain.com" />
-              </div>
-              <div class="form-group">
-                <label class="label">手机号</label>
-                <input v-model="createForm.phone" type="tel" class="input" placeholder="选填" maxlength="11" />
-              </div>
-            </div>
-            
-            <div class="form-grid form-grid-2" style="margin-top: 1rem;">
-              <div class="form-group">
-                <label class="label label-required">初始密码</label>
-                <input v-model="createForm.password" type="password" class="input" placeholder="至少8位" />
-              </div>
-              <div class="form-group">
-                <label class="label label-required">角色</label>
-                <select v-model="createForm.role" class="input">
-                  <option value="user">普通用户</option>
-                  <option value="admin">管理员</option>
-                </select>
-              </div>
-            </div>
-            
-            <div v-if="createError" class="error-message" style="margin-top: 1rem;">
-              <p>{{ createError }}</p>
-            </div>
-          </form>
+    <Modal :show="showCreateModal" title="创建新用户" @close="showCreateModal = false">
+      <form @submit.prevent="handleCreateUser">
+        <div class="form-grid form-grid-2">
+          <FormField
+            v-model="createForm.username"
+            label="用户名"
+            type="text"
+            placeholder="用于登录"
+            required
+          />
+          <FormField
+            v-model="createForm.nickname"
+            label="昵称"
+            type="text"
+            placeholder="用于显示"
+            required
+          />
         </div>
         
-        <div class="modal-footer">
-          <button @click="showCreateModal = false" class="btn btn-secondary">
-            取消
-          </button>
-          <button
-            @click="handleCreateUser"
-            :disabled="createLoading"
-            class="btn btn-primary"
-          >
-            {{ createLoading ? '创建中...' : '创建用户' }}
-          </button>
+        <div class="form-grid form-grid-2" style="margin-top: 1rem;">
+          <FormField
+            v-model="createForm.email"
+            label="邮箱"
+            type="email"
+            placeholder="example@domain.com"
+            required
+          />
+          <FormField
+            v-model="createForm.phone"
+            label="手机号"
+            type="tel"
+            placeholder="选填"
+            :maxlength="11"
+          />
         </div>
-      </div>
-    </div>
+        
+        <div class="form-grid form-grid-2" style="margin-top: 1rem;">
+          <FormField
+            v-model="createForm.password"
+            label="初始密码"
+            type="password"
+            placeholder="至少8位"
+            required
+          />
+          <FormSelect
+            v-model="createForm.role"
+            label="角色"
+            :options="roleOptions"
+            required
+          />
+        </div>
+        
+        <AlertMessage v-if="createError" type="error" :message="createError" />
+      </form>
+      
+      <template #footer>
+        <ActionButton variant="secondary" @click="showCreateModal = false">
+          取消
+        </ActionButton>
+        <ActionButton
+          variant="primary"
+          :loading="createLoading"
+          @click="handleCreateUser"
+        >
+          {{ createLoading ? '创建中...' : '创建用户' }}
+        </ActionButton>
+      </template>
+    </Modal>
   </div>
 </template>

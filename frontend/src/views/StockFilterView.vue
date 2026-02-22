@@ -116,26 +116,22 @@
           </div>
           
           <div class="filter-actions">
-            <button
+            <ActionButton
               type="submit"
-              class="btn btn-primary"
-              :disabled="loading"
+              variant="primary"
+              :loading="loading"
+              icon="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
             >
-              <svg style="width: 18px; height: 18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-              </svg>
               {{ loading ? '筛选中...' : '开始筛选' }}
-            </button>
-            <button
+            </ActionButton>
+            <ActionButton
               type="button"
-              class="btn btn-secondary"
+              variant="secondary"
+              icon="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
               @click="resetForm"
             >
-              <svg style="width: 18px; height: 18px;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-              </svg>
               重置
-            </button>
+            </ActionButton>
           </div>
         </form>
       </div>
@@ -148,44 +144,38 @@
           </div>
         </div>
 
-        <div class="table-container">
-          <table class="table">
-            <thead>
-              <tr>
-                <th>股票代码</th>
-                <th>股票名称</th>
-                <th>收盘价</th>
-                <th>涨跌幅</th>
-                <th>流通市值</th>
-                <th>市盈率</th>
-                <th>换手率</th>
-                <th>净流入额</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="item in results" :key="item.ts_code">
-                <td><span class="stock-code">{{ item.ts_code }}</span></td>
-                <td><span class="stock-name">{{ item.name }}</span></td>
-                <td>{{ formatNumber(item.close) }}</td>
-                <td :class="getPctColor(item.pct_chg)">{{ formatPct(item.pct_chg) }}</td>
-                <td>{{ formatMV(item.circ_mv) }}亿</td>
-                <td>{{ formatNumber(item.pe) }}</td>
-                <td>{{ formatNumber(item.turnover_rate) }}%</td>
-                <td :class="getMfColor(item.net_mf_amount)">{{ formatMfAmount(item.net_mf_amount) }}万</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        <DataTable :loading="false" :empty="false">
+          <template #header>
+            <tr>
+              <th>股票代码</th>
+              <th>股票名称</th>
+              <th>收盘价</th>
+              <th>涨跌幅</th>
+              <th>流通市值</th>
+              <th>市盈率</th>
+              <th>换手率</th>
+              <th>净流入额</th>
+            </tr>
+          </template>
+          <tr v-for="item in results" :key="item.ts_code">
+            <td><span class="stock-code">{{ item.ts_code }}</span></td>
+            <td><span class="stock-name">{{ item.name }}</span></td>
+            <td>{{ formatNumber(item.close) }}</td>
+            <td :class="getPctColor(item.pct_chg)">{{ formatPct(item.pct_chg) }}</td>
+            <td>{{ formatMV(item.circ_mv) }}亿</td>
+            <td>{{ formatNumber(item.pe) }}</td>
+            <td>{{ formatNumber(item.turnover_rate) }}%</td>
+            <td :class="getMfColor(item.net_mf_amount)">{{ formatMfAmount(item.net_mf_amount) }}万</td>
+          </tr>
+        </DataTable>
       </div>
 
       <!-- 空状态 -->
-      <div v-else-if="searched" class="empty-state">
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
-        </svg>
-        <h3 class="empty-state-title">暂无筛选结果</h3>
-        <p class="empty-state-text">请设置筛选条件并点击"开始筛选"按钮</p>
-      </div>
+      <EmptyState
+        v-else-if="searched"
+        title="暂无筛选结果"
+        description="请设置筛选条件并点击"开始筛选"按钮"
+      />
     </main>
   </div>
 </template>
@@ -196,6 +186,9 @@ import { ElMessage } from 'element-plus'
 import { strategyApi, type DailyQuote } from '@/api/client'
 import AppNavbar from '@/components/AppNavbar.vue'
 import PageHeader from '@/components/PageHeader.vue'
+import ActionButton from '@/components/ActionButton.vue'
+import DataTable from '@/components/DataTable.vue'
+import EmptyState from '@/components/EmptyState.vue'
 
 const loading = ref(false)
 const searched = ref(false)
