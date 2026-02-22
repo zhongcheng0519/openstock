@@ -1,12 +1,12 @@
 import tushare as ts
 import pandas as pd
-from datetime import date
+from datetime import date, timedelta, datetime
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, insert
 
 from app.core.config import get_settings
-from app.models.stock import Stock, DailyQuote, DailyBasic, Moneyflow
+from app.models.stock import Stock, DailyQuote, DailyBasic, Moneyflow, TradeCalendar
 
 settings = get_settings()
 
@@ -250,7 +250,136 @@ class TushareService:
             select(Moneyflow).where(Moneyflow.trade_date == trade_date).limit(1)
         )
         return result.scalar_one_or_none() is not None
+    
+    async def sync_trade_calendar(
+        self, 
+        db: AsyncSession, 
+        exchange: str = 'SSE',
+        start_date: Optional[date] = None,
+        end_date: Optional[date] = None
+    ) -> int:
+        """同步交易日历数据
+        
+        Args:
+            db: 数据库会话
+            exchange: 交易所代码，默认 SSE
+            start_date: 开始日期，默认两个月前
+            end_date: 结束日期，默认今天
+            
+        Returns:
+            同步的记录数量
+        """
+        if start_date is None:
+            start_date = date.today() - timedelta(days=60)
+        if end_date is None:
+            end_date = date.today()
+        
+        start_str = start_date.strftime('%Y%m%d')
+        end_str = end_date.strftime('%Y%m%d')
+        
+        try:
+            df = self.pro.trade_cal(exchange='', start_date=start_str, end_date=end_str)
+        except Exception as e:
+            return 0
+        
+        if df is None or df.empty:
+            return 0
+        
+        calendar_data = []
+        for _, row in df.iterrows():
+            if exchange and row['exchange'] != exchange:
+                continue
+            cal_date = datetime.strptime(row['cal_date'], '%Y%m%d').date()
+            pretrade_date = None
+            if pd.notna(row.get('pretrade_date')) and row['pretrade_date']:
+                pretrade_date = datetime.strptime(str(row['pretrade_date']), '%Y%m%d').date()
+            
+            is_open_val = row['is_open']
+            is_open = (str(is_open_val) == '1') or (is_open_val == 1) or (is_open_val is True)
+            
+            calendar_data.append({
+                'exchange': row['exchange'],
+                'cal_date': cal_date,
+                'is_open': is_open,
+                'pretrade_date': pretrade_date,
+            })
+        
+        if calendar_data:
+            for cal in calendar_data:
+                result = await db.execute(
+                    select(TradeCalendar).where(
+                        TradeCalendar.exchange == cal['exchange'],
+                        TradeCalendar.cal_date == cal['cal_date']
+                    )
+                )
+                existing = result.scalar_one_or_none()
+                
+                if existing:
+                    existing.is_open = cal['is_open']
+                    existing.pretrade_date = cal['pretrade_date']
+                else:
+                    new_cal = TradeCalendar(**cal)
+                    db.add(new_cal)
+            
+            await db.commit()
+        
+        return len(calendar_data)
+    
+    async def check_trade_calendar_exists(
+        self, 
+        db: AsyncSession, 
+        exchange: str = 'SSE',
+        start_date: Optional[date] = None,
+        end_date: Optional[date] = None
+    ) -> bool:
+        """检查指定日期范围的交易日历数据是否已存在"""
+        if start_date is None:
+            start_date = date.today() - timedelta(days=60)
+        if end_date is None:
+            end_date = date.today()
+        
+        result = await db.execute(
+            select(TradeCalendar).where(
+                TradeCalendar.exchange == exchange,
+                TradeCalendar.cal_date >= start_date,
+                TradeCalendar.cal_date <= end_date
+            ).limit(1)
+        )
+        return result.scalar_one_or_none() is not None
+    
+    async def get_latest_trade_date(self, db: AsyncSession, exchange: str = 'SSE') -> Optional[date]:
+        """获取最近的交易日
+        
+        Args:
+            db: 数据库会话
+            exchange: 交易所代码，默认 SSE
+            
+        Returns:
+            最近的交易日期，如果没有返回 None
+        """
+        start_date = date.today() - timedelta(days=60)
+        end_date = date.today()
+        
+        calendar_exists = await self.check_trade_calendar_exists(db, exchange, start_date, end_date)
+        if not calendar_exists:
+            await self.sync_trade_calendar(db, exchange, start_date, end_date)
+        
+        result = await db.execute(
+            select(TradeCalendar)
+            .where(
+                TradeCalendar.exchange == exchange,
+                TradeCalendar.is_open == True,
+                TradeCalendar.cal_date <= end_date,
+                TradeCalendar.cal_date >= start_date
+            )
+            .order_by(TradeCalendar.cal_date.desc())
+            .limit(1)
+        )
+        trade_cal = result.scalar_one_or_none()
+        
+        if trade_cal:
+            return trade_cal.cal_date
+        return None
 
 
-# 单例实例
 tushare_service = TushareService()

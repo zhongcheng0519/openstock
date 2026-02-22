@@ -172,6 +172,29 @@
 > - 敏感参数（如密码）需脱敏后存储
 > - 按时间索引支持快速查询历史记录
 
+#### 7. 交易日历表 (`trade_calendar`)
+
+存储各大交易所的交易日历数据，用于判断某日是否为交易日。
+
+| **字段名**     | **类型**     | **说明**                              |
+| -------------- | ------------ | ------------------------------------- |
+| id             | BigInt       | **主键** (自增)                       |
+| exchange       | String(20)   | **索引**，交易所代码                  |
+| cal_date       | Date         | **索引**，日历日期 (YYYY-MM-DD)       |
+| is_open        | Boolean      | 是否交易日 (True=交易, False=休市)    |
+| pretrade_date  | Date         | 上一个交易日                          |
+
+> **设计说明**: 
+> - 交易所代码：SSE(上交所)、SZSE(深交所)、CFFEX(中金所)、SHFE(上期所)、CZCE(郑商所)、DCE(大商所)、INE(上能源)
+> - `exchange` 和 `cal_date` 组成联合唯一索引
+> - 默认使用 SSE (上交所) 的交易日历
+> - 数据来源：Tushare `trade_cal` 接口，需要至少2000积分
+
+> **数据同步逻辑**:
+> - 系统启动时检查最近一个月的交易日历数据是否存在
+> - 若不存在，调用 Tushare `trade_cal` 接口获取并入库
+> - 前端获取默认交易日期时，查询该表获取最近的交易日
+
 ### 4.2 数据库迁移管理 (Alembic)
 
 - **env.py 配置**: 配置 SQLAlchemy 的 `Base.metadata`，使 Alembic 能够自动检测模型变化。
@@ -202,6 +225,42 @@
    - 策略筛选时，与 `daily_hq`、`daily_basic` 表联合查询，支持按净流入额排序。
 
 ## 6. API 接口定义
+
+### 0. 获取最新交易日接口
+
+用于前端页面初始化时获取默认的交易日期。
+
+- **URL**: `GET /api/v1/trade-calendar/latest`
+
+- **Query Parameters**:
+  | **参数名** | **类型** | **必填** | **说明**                     |
+  | ---------- | -------- | -------- | ---------------------------- |
+  | exchange   | string   | 否       | 交易所代码，默认 SSE         |
+
+- **Response**:
+  ```json
+  {
+    "trade_date": "20231027",
+    "exchange": "SSE"
+  }
+  ```
+
+- **逻辑说明**:
+  1. 查询交易日历表，获取从一个月前到今天之间，`is_open = True` 的最后一个交易日
+  2. 若本地数据库无数据，先调用 Tushare `trade_cal` 接口同步最近一个月的交易日历
+  3. 返回最近的交易日期（格式：YYYYMMDD）
+
+- **SQL 查询示例**:
+  ```sql
+  SELECT cal_date 
+  FROM trade_calendar 
+  WHERE exchange = 'SSE' 
+    AND is_open = true 
+    AND cal_date <= CURRENT_DATE 
+    AND cal_date >= CURRENT_DATE - INTERVAL '30 days'
+  ORDER BY cal_date DESC 
+  LIMIT 1
+  ```
 
 ### 1. 股票筛选接口
 

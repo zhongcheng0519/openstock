@@ -182,6 +182,11 @@ export interface LogStatisticsResponse {
   by_user: Array<{ user_id: number | null; username: string; count: number }>
 }
 
+export interface LatestTradeDateResponse {
+  trade_date: string
+  exchange: string
+}
+
 export const strategyApi = {
   stockFilter: (params: StockFilterRequest) =>
     apiClient.post<StockFilterResponse>('/api/v1/strategy/filter', params),
@@ -194,6 +199,9 @@ export const strategyApi = {
 
   syncDaily: (tradeDate: string) =>
     apiClient.post<SyncStatusResponse>(`/api/v1/strategy/sync-daily/${tradeDate}`),
+
+  getLatestTradeDate: (exchange: string = 'SSE') =>
+    apiClient.get<LatestTradeDateResponse>('/api/v1/strategy/trade-calendar/latest', { params: { exchange } }),
 }
 
 export const authApi = {

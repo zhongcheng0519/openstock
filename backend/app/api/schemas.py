@@ -240,3 +240,9 @@ class LogStatisticsResponse(BaseModel):
     unique_users: int
     by_action: dict[str, int]
     by_user: list[dict]
+
+
+class LatestTradeDateResponse(BaseModel):
+    """最新交易日响应"""
+    trade_date: str
+    exchange: str

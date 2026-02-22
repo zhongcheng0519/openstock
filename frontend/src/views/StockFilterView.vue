@@ -251,7 +251,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, computed } from 'vue'
+import { reactive, ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { strategyApi, type DailyQuote } from '@/api/client'
@@ -278,8 +278,8 @@ const currentTradeDate = ref('')
 
 const filterForm = reactive({
   trade_date: '',
-  min_pct: -100,
-  max_pct: 100,
+  min_pct: 2,
+  max_pct: 5,
   min_circ_mv_yi: 50,
   max_circ_mv_yi: null as number | null,
   min_pe: 0,
@@ -288,6 +288,15 @@ const filterForm = reactive({
   max_turnover_rate: null as number | null,
   min_net_mf_amount: null as number | null,
   mf_top_n: 30,
+})
+
+onMounted(async () => {
+  try {
+    const response = await strategyApi.getLatestTradeDate()
+    filterForm.trade_date = response.data.trade_date
+  } catch (error) {
+    console.error('获取最新交易日失败:', error)
+  }
 })
 
 const handleFilter = async () => {
@@ -363,8 +372,8 @@ const formatMV = (val: number | null) => {
 
 const resetForm = () => {
   filterForm.trade_date = ''
-  filterForm.min_pct = -100
-  filterForm.max_pct = 100
+  filterForm.min_pct = 2
+  filterForm.max_pct = 5
   filterForm.min_circ_mv_yi = 50
   filterForm.max_circ_mv_yi = null
   filterForm.min_pe = 0

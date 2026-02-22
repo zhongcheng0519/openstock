@@ -184,3 +184,23 @@ class UserLog(Base):
     
     def __repr__(self) -> str:
         return f"<UserLog(id={self.id}, user_id={self.user_id}, action='{self.action}')>"
+
+
+class TradeCalendar(Base):
+    """交易日历表"""
+    __tablename__ = "trade_calendar"
+    
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True, comment="主键")
+    exchange: Mapped[str] = mapped_column(String(20), nullable=False, comment="交易所代码")
+    cal_date: Mapped[date] = mapped_column(Date, nullable=False, comment="日历日期")
+    is_open: Mapped[bool] = mapped_column(Boolean, nullable=False, comment="是否交易日")
+    pretrade_date: Mapped[date | None] = mapped_column(Date, nullable=True, comment="上一个交易日")
+    
+    __table_args__ = (
+        Index("idx_trade_calendar_exchange", "exchange"),
+        Index("idx_trade_calendar_cal_date", "cal_date"),
+        Index("idx_trade_calendar_exchange_date", "exchange", "cal_date", unique=True),
+    )
+    
+    def __repr__(self) -> str:
+        return f"<TradeCalendar(exchange='{self.exchange}', cal_date='{self.cal_date}', is_open={self.is_open})>"

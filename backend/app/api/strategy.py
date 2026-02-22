@@ -13,10 +13,47 @@ from app.api.schemas import (
     PctFilterRequest, 
     PctFilterResponse, 
     DailyQuoteResponse,
-    SyncStatusResponse
+    SyncStatusResponse,
+    LatestTradeDateResponse
 )
 
 router = APIRouter(prefix="/api/v1/strategy", tags=["strategy"])
+
+
+@router.get("/trade-calendar/latest", response_model=LatestTradeDateResponse)
+async def get_latest_trade_date(
+    exchange: str = 'SSE',
+    db: AsyncSession = Depends(get_db)
+):
+    """获取最近的交易日
+    
+    查询交易日历表，获取从一个月前到今天之间，is_open = True 的最后一个交易日。
+    若本地数据库无数据，先调用 Tushare trade_cal 接口同步最近一个月的交易日历。
+    
+    Args:
+        exchange: 交易所代码，默认 SSE (上交所)
+        
+    Returns:
+        最近的交易日期（格式：YYYYMMDD）
+    """
+    try:
+        latest_date = await tushare_service.get_latest_trade_date(db, exchange)
+        if latest_date is None:
+            raise HTTPException(
+                status_code=404,
+                detail="未找到最近的交易日"
+            )
+        return LatestTradeDateResponse(
+            trade_date=latest_date.strftime('%Y%m%d'),
+            exchange=exchange
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"获取交易日历失败: {str(e)}"
+        )
 
 
 @router.post("/filter", response_model=StockFilterResponse)
