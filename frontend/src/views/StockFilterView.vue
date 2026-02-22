@@ -174,7 +174,7 @@
       <EmptyState
         v-else-if="searched"
         title="暂无筛选结果"
-        description="请设置筛选条件并点击"开始筛选"按钮"
+        description="请设置筛选条件并点击开始筛选按钮"
       />
     </main>
   </div>
