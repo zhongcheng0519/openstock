@@ -1,4 +1,5 @@
 import sys
+import logging
 from loguru import logger
 
 from app.core.config import get_settings
@@ -26,5 +27,9 @@ def setup_logging():
             format="{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {name}:{function}:{line} - {message}",
             level=log_level,
         )
+
+    # Suppress SQLAlchemy engine logs
+    logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
+    logging.getLogger("sqlalchemy.pool").setLevel(logging.WARNING)
 
     return logger

@@ -4,10 +4,11 @@ from loguru import logger
 
 from app.core.config import get_settings
 from app.core.logger import setup_logging
-from app.api import strategy, auth, admin
 
 settings = get_settings()
 setup_logging()
+
+from app.api import strategy, auth, admin
 
 logger.info(f"Starting server in {'debug' if settings.DEBUG else 'production'} mode")
 

@@ -40,10 +40,12 @@ async def get_latest_trade_date(
     try:
         latest_date = await tushare_service.get_latest_trade_date(db, exchange)
         if latest_date is None:
+            logger.warning(f"未找到交易所 {exchange} 的最近交易日")
             raise HTTPException(
                 status_code=404,
                 detail="未找到最近的交易日"
             )
+        logger.info(f"获取最近交易日: {latest_date} ({exchange})")
         return LatestTradeDateResponse(
             trade_date=latest_date.strftime('%Y%m%d'),
             exchange=exchange
@@ -51,6 +53,7 @@ async def get_latest_trade_date(
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"获取最近交易日失败: {e}")
         raise HTTPException(
             status_code=500,
             detail=f"获取交易日历失败: {str(e)}"
@@ -69,9 +72,11 @@ async def stock_filter(
     结果按净流入额降序排序，返回前 mf_top_n 条记录。
     """
     trade_date = datetime.strptime(request.trade_date, "%Y%m%d").date()
+    logger.info(f"股票筛选请求: 日期={request.trade_date}, 涨跌幅={request.min_pct}%~{request.max_pct}%")
     
     hq_exists = await tushare_service.check_data_exists(db, trade_date)
     if not hq_exists:
+        logger.info(f"本地无 {request.trade_date} 行情数据，开始同步...")
         try:
             synced_count = await tushare_service.sync_daily_quotes(db, trade_date)
             if synced_count == 0:
@@ -79,7 +84,11 @@ async def stock_filter(
                     status_code=404, 
                     detail=f"未找到 {request.trade_date} 的交易数据"
                 )
+            logger.info(f"行情数据同步完成: {synced_count} 条")
+        except HTTPException:
+            raise
         except Exception as e:
+            logger.error(f"同步行情数据失败: {e}")
             raise HTTPException(
                 status_code=500, 
                 detail=f"同步行情数据失败: {str(e)}"
@@ -87,6 +96,7 @@ async def stock_filter(
     
     basic_exists = await tushare_service.check_basic_data_exists(db, trade_date)
     if not basic_exists:
+        logger.info(f"本地无 {request.trade_date} 基本面数据，开始同步...")
         try:
             synced_count = await tushare_service.sync_daily_basic(db, trade_date)
             if synced_count == 0:
@@ -94,7 +104,11 @@ async def stock_filter(
                     status_code=404, 
                     detail=f"未找到 {request.trade_date} 的基本面数据"
                 )
+            logger.info(f"基本面数据同步完成: {synced_count} 条")
+        except HTTPException:
+            raise
         except Exception as e:
+            logger.error(f"同步基本面数据失败: {e}")
             raise HTTPException(
                 status_code=500, 
                 detail=f"同步基本面数据失败: {str(e)}"
@@ -102,6 +116,7 @@ async def stock_filter(
     
     mf_exists = await tushare_service.check_moneyflow_data_exists(db, trade_date)
     if not mf_exists:
+        logger.info(f"本地无 {request.trade_date} 资金流向数据，开始同步...")
         try:
             synced_count = await tushare_service.sync_moneyflow(db, trade_date)
             if synced_count == 0:
@@ -109,7 +124,11 @@ async def stock_filter(
                     status_code=404, 
                     detail=f"未找到 {request.trade_date} 的资金流向数据"
                 )
+            logger.info(f"资金流向数据同步完成: {synced_count} 条")
+        except HTTPException:
+            raise
         except Exception as e:
+            logger.error(f"同步资金流向数据失败: {e}")
             raise HTTPException(
                 status_code=500, 
                 detail=f"同步资金流向数据失败: {str(e)}"
@@ -176,6 +195,7 @@ async def stock_filter(
             net_mf_vol=float(moneyflow.net_mf_vol) if moneyflow.net_mf_vol else None,
         ))
     
+    logger.info(f"股票筛选完成: 日期={trade_date}, 结果={len(data)} 条")
     return StockFilterResponse(
         trade_date=trade_date,
         count=len(data),
@@ -193,9 +213,11 @@ async def pct_filter(
     如果本地没有该日期的数据，会自动从 Tushare 同步
     """
     trade_date = datetime.strptime(request.trade_date, "%Y%m%d").date()
+    logger.info(f"涨跌幅筛选请求: 日期={request.trade_date}, 涨跌幅={request.min_pct}%~{request.max_pct}%")
     
     exists = await tushare_service.check_data_exists(db, trade_date)
     if not exists:
+        logger.info(f"本地无 {request.trade_date} 行情数据，开始同步...")
         try:
             synced_count = await tushare_service.sync_daily_quotes(db, trade_date)
             if synced_count == 0:
@@ -203,7 +225,11 @@ async def pct_filter(
                     status_code=404, 
                     detail=f"未找到 {request.trade_date} 的交易数据"
                 )
+            logger.info(f"行情数据同步完成: {synced_count} 条")
+        except HTTPException:
+            raise
         except Exception as e:
+            logger.error(f"同步行情数据失败: {e}")
             raise HTTPException(
                 status_code=500, 
                 detail=f"同步数据失败: {str(e)}"
@@ -243,6 +269,7 @@ async def pct_filter(
             amount=float(daily_quote.amount) if daily_quote.amount else None,
         ))
     
+    logger.info(f"涨跌幅筛选完成: 日期={trade_date}, 结果={len(data)} 条")
     return PctFilterResponse(
         trade_date=trade_date,
         count=len(data),
@@ -253,13 +280,16 @@ async def pct_filter(
 @router.post("/sync-stocks", response_model=SyncStatusResponse)
 async def sync_stocks(db: AsyncSession = Depends(get_db)):
     """同步股票基础信息"""
+    logger.info("开始同步股票基础信息")
     try:
         count = await tushare_service.sync_stock_basic(db)
+        logger.info(f"股票基础信息同步完成: {count} 条")
         return SyncStatusResponse(
             message="股票基础信息同步成功",
             synced_count=count
         )
     except Exception as e:
+        logger.error(f"同步股票基础信息失败: {e}")
         raise HTTPException(
             status_code=500,
             detail=f"同步失败: {str(e)}"
@@ -276,19 +306,23 @@ async def sync_daily(
     Args:
         trade_date: 交易日期 (YYYYMMDD)
     """
+    logger.info(f"开始同步日线行情: {trade_date}")
     try:
         date_obj = datetime.strptime(trade_date, "%Y%m%d").date()
         count = await tushare_service.sync_daily_quotes(db, date_obj)
+        logger.info(f"日线行情同步完成: {trade_date}, {count} 条")
         return SyncStatusResponse(
             message=f"{trade_date} 日线行情同步成功",
             synced_count=count
         )
     except ValueError:
+        logger.warning(f"日期格式错误: {trade_date}")
         raise HTTPException(
             status_code=400,
             detail="日期格式错误，请使用 YYYYMMDD 格式"
         )
     except Exception as e:
+        logger.error(f"同步日线行情失败: {trade_date}, {e}")
         raise HTTPException(
             status_code=500,
             detail=f"同步失败: {str(e)}"
