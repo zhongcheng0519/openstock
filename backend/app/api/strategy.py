@@ -18,6 +18,26 @@ from app.api.schemas import (
 
 router = APIRouter(prefix="/api/v1/strategy", tags=["strategy"])
 
+FIELD_MAPPING = {
+    "pct_chg": DailyQuote.pct_chg,
+    "circ_mv": DailyBasic.circ_mv,
+    "pe": DailyBasic.pe,
+    "turnover_rate": DailyBasic.turnover_rate,
+    "net_mf_amount": Moneyflow.net_mf_amount,
+    "net_mf_vol": Moneyflow.net_mf_vol,
+    "vol": DailyQuote.vol,
+    "amount": DailyQuote.amount,
+    "change": DailyQuote.change,
+}
+
+OPERATOR_MAP = {
+    "gte": lambda col, val: col >= val,
+    "lte": lambda col, val: col <= val,
+    "eq": lambda col, val: col == val,
+    "gt": lambda col, val: col > val,
+    "lt": lambda col, val: col < val,
+}
+
 
 @router.get("/trade-calendar/latest", response_model=LatestTradeDateResponse)
 async def get_latest_trade_date(
@@ -106,9 +126,20 @@ async def stock_filter(
     所有条件之间为且(AND)关系，股票需同时满足所有条件才会被筛选出来。
     如果本地没有该日期的数据，会自动从 Tushare 同步。
     结果按净流入额降序排序，返回前 mf_top_n 条记录。
+    
+    条件格式示例:
+    [
+        {"field": "pct_chg", "operator": "gte", "value": -5.0},
+        {"field": "pct_chg", "operator": "lte", "value": 5.0},
+        {"field": "circ_mv", "operator": "gte", "value": 500000},
+        {"field": "pe", "operator": "gte", "value": 0},
+        {"field": "pe", "operator": "lte", "value": 50},
+        {"field": "turnover_rate", "operator": "gte", "value": 5.0},
+        {"field": "net_mf_amount", "operator": "gte", "value": 0}
+    ]
     """
     trade_date = datetime.strptime(request.trade_date, "%Y%m%d").date()
-    logger.info(f"股票筛选请求: 日期={request.trade_date}, 涨跌幅={request.min_pct}%~{request.max_pct}%")
+    logger.info(f"股票筛选请求: 日期={request.trade_date}, 条件数={len(request.conditions)}, 条件={request.conditions}")
 
     await _ensure_data_synced(
         db, trade_date, "行情数据",
@@ -126,24 +157,21 @@ async def stock_filter(
         tushare_service.sync_moneyflow,
     )
 
-    conditions = [
-        DailyQuote.trade_date == trade_date,
-        DailyQuote.pct_chg >= request.min_pct,
-        DailyQuote.pct_chg <= request.max_pct,
-        DailyBasic.circ_mv >= request.min_circ_mv,
-        DailyBasic.pe >= request.min_pe,
-        DailyBasic.pe <= request.max_pe,
-        DailyBasic.turnover_rate >= request.min_turnover_rate,
-    ]
-
-    if request.max_circ_mv is not None:
-        conditions.append(DailyBasic.circ_mv <= request.max_circ_mv)
-
-    if request.max_turnover_rate is not None:
-        conditions.append(DailyBasic.turnover_rate <= request.max_turnover_rate)
-
-    if request.min_net_mf_amount is not None:
-        conditions.append(Moneyflow.net_mf_amount >= request.min_net_mf_amount)
+    conditions = [DailyQuote.trade_date == trade_date]
+    
+    for cond in request.conditions:
+        if cond.field not in FIELD_MAPPING:
+            raise HTTPException(
+                status_code=400,
+                detail=f"未知字段: {cond.field}"
+            )
+        if cond.operator not in OPERATOR_MAP:
+            raise HTTPException(
+                status_code=400,
+                detail=f"未知操作符: {cond.operator}"
+            )
+        column = FIELD_MAPPING[cond.field]
+        conditions.append(OPERATOR_MAP[cond.operator](column, cond.value))
 
     query = (
         select(DailyQuote, DailyBasic, Stock, Moneyflow)

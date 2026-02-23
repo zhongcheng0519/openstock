@@ -3,18 +3,23 @@ from typing import Optional
 from pydantic import BaseModel, Field, EmailStr, field_validator
 
 
+class FilterCondition(BaseModel):
+    """筛选条件"""
+    field: str = Field(..., description="字段名，如 pct_chg, circ_mv, pe, turnover_rate, net_mf_amount")
+    operator: str = Field(..., description="操作符：gte(>=), lte(<=), eq(==), gt(>), lt(<)")
+    value: float = Field(..., description="条件值")
+
+
 class StockFilterRequest(BaseModel):
     """股票筛选请求"""
     trade_date: str = Field(..., description="交易日期 (YYYYMMDD)", pattern=r"^\d{8}$")
-    min_pct: float = Field(default=-100.0, description="最小涨跌幅(%)")
-    max_pct: float = Field(default=100.0, description="最大涨跌幅(%)")
-    min_circ_mv: float = Field(default=500000.0, description="最小流通市值(万元，默认50亿)")
-    max_circ_mv: Optional[float] = Field(default=None, description="最大流通市值(万元)")
-    min_pe: float = Field(default=0.0, description="最小市盈率")
-    max_pe: float = Field(default=50.0, description="最大市盈率")
-    min_turnover_rate: float = Field(default=5.0, description="最小换手率(%)")
-    max_turnover_rate: Optional[float] = Field(default=None, description="最大换手率(%)")
-    min_net_mf_amount: Optional[float] = Field(default=None, description="最小净流入额(万元)")
+    conditions: list[FilterCondition] = Field(
+        default_factory=lambda: [
+            FilterCondition(field="pct_chg", operator="gte", value=-100.0),
+            FilterCondition(field="pct_chg", operator="lte", value=100.0),
+        ],
+        description="筛选条件列表，所有条件为 AND 关系"
+    )
     mf_top_n: int = Field(default=30, ge=1, le=500, description="按净流入额排名取前N只股票")
 
 
