@@ -53,6 +53,18 @@ export interface StockFilterRequest {
   mf_top_n?: number
 }
 
+export interface FilterCondition {
+  field: string
+  operator: string
+  value: number
+}
+
+export interface StockFilterBackendRequest {
+  trade_date: string
+  conditions: FilterCondition[]
+  mf_top_n: number
+}
+
 export interface DailyQuote {
   ts_code: string
   symbol: string
@@ -176,8 +188,45 @@ export interface LatestTradeDateResponse {
 }
 
 export const strategyApi = {
-  stockFilter: (params: StockFilterRequest) =>
-    apiClient.post<StockFilterResponse>('/api/v1/strategy/filter', params),
+  stockFilter: (params: StockFilterRequest) => {
+    const conditions: FilterCondition[] = []
+    
+    if (params.min_pct !== undefined && params.min_pct !== null) {
+      conditions.push({ field: 'pct_chg', operator: 'gte', value: params.min_pct })
+    }
+    if (params.max_pct !== undefined && params.max_pct !== null) {
+      conditions.push({ field: 'pct_chg', operator: 'lte', value: params.max_pct })
+    }
+    if (params.min_circ_mv !== undefined && params.min_circ_mv !== null) {
+      conditions.push({ field: 'circ_mv', operator: 'gte', value: params.min_circ_mv })
+    }
+    if (params.max_circ_mv !== undefined && params.max_circ_mv !== null) {
+      conditions.push({ field: 'circ_mv', operator: 'lte', value: params.max_circ_mv })
+    }
+    if (params.min_pe !== undefined && params.min_pe !== null) {
+      conditions.push({ field: 'pe', operator: 'gte', value: params.min_pe })
+    }
+    if (params.max_pe !== undefined && params.max_pe !== null) {
+      conditions.push({ field: 'pe', operator: 'lte', value: params.max_pe })
+    }
+    if (params.min_turnover_rate !== undefined && params.min_turnover_rate !== null) {
+      conditions.push({ field: 'turnover_rate', operator: 'gte', value: params.min_turnover_rate })
+    }
+    if (params.max_turnover_rate !== undefined && params.max_turnover_rate !== null) {
+      conditions.push({ field: 'turnover_rate', operator: 'lte', value: params.max_turnover_rate })
+    }
+    if (params.min_net_mf_amount !== undefined && params.min_net_mf_amount !== null) {
+      conditions.push({ field: 'net_mf_amount', operator: 'gte', value: params.min_net_mf_amount })
+    }
+
+    const backendRequest: StockFilterBackendRequest = {
+      trade_date: params.trade_date,
+      conditions,
+      mf_top_n: params.mf_top_n || 30
+    }
+    
+    return apiClient.post<StockFilterResponse>('/api/v1/strategy/filter', backendRequest)
+  },
 
   syncStocks: () =>
     apiClient.post<SyncStatusResponse>('/api/v1/strategy/sync-stocks'),
