@@ -239,18 +239,6 @@ Content-Type: application/json
 
 筛选结果按净流入额降序排序，返回前 `mf_top_n` 条记录。
 
-### 涨跌幅筛选（兼容旧接口）
-```
-POST /api/v1/strategy/pct-filter
-Content-Type: application/json
-
-{
-  "trade_date": "20231027",
-  "min_pct": -2.0,
-  "max_pct": 5.0
-}
-```
-
 ### 同步股票列表
 ```
 POST /api/v1/strategy/sync-stocks

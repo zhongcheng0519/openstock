@@ -18,13 +18,6 @@ class StockFilterRequest(BaseModel):
     mf_top_n: int = Field(default=30, ge=1, le=500, description="按净流入额排名取前N只股票")
 
 
-class PctFilterRequest(BaseModel):
-    """涨跌幅筛选请求（兼容旧接口）"""
-    trade_date: str = Field(..., description="交易日期 (YYYYMMDD)", pattern=r"^\d{8}$")
-    min_pct: float = Field(default=-10.0, description="最小涨跌幅(%)")
-    max_pct: float = Field(default=10.0, description="最大涨跌幅(%)")
-
-
 class StockInfo(BaseModel):
     """股票信息"""
     ts_code: str
@@ -64,13 +57,6 @@ class DailyQuoteResponse(BaseModel):
 
 class StockFilterResponse(BaseModel):
     """股票筛选响应"""
-    trade_date: date
-    count: int
-    data: list[DailyQuoteResponse]
-
-
-class PctFilterResponse(BaseModel):
-    """涨跌幅筛选响应（兼容旧接口）"""
     trade_date: date
     count: int
     data: list[DailyQuoteResponse]

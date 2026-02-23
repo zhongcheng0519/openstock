@@ -53,12 +53,6 @@ export interface StockFilterRequest {
   mf_top_n?: number
 }
 
-export interface PctFilterRequest {
-  trade_date: string
-  min_pct: number
-  max_pct: number
-}
-
 export interface DailyQuote {
   ts_code: string
   symbol: string
@@ -81,12 +75,6 @@ export interface DailyQuote {
 }
 
 export interface StockFilterResponse {
-  trade_date: string
-  count: number
-  data: DailyQuote[]
-}
-
-export interface PctFilterResponse {
   trade_date: string
   count: number
   data: DailyQuote[]
@@ -190,9 +178,6 @@ export interface LatestTradeDateResponse {
 export const strategyApi = {
   stockFilter: (params: StockFilterRequest) =>
     apiClient.post<StockFilterResponse>('/api/v1/strategy/filter', params),
-
-  pctFilter: (params: PctFilterRequest) =>
-    apiClient.post<PctFilterResponse>('/api/v1/strategy/pct-filter', params),
 
   syncStocks: () =>
     apiClient.post<SyncStatusResponse>('/api/v1/strategy/sync-stocks'),

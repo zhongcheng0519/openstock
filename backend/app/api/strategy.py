@@ -10,9 +10,7 @@ from app.models.stock import Stock, DailyQuote, DailyBasic, Moneyflow
 from app.services.tushare_service import tushare_service
 from app.api.schemas import (
     StockFilterRequest,
-    StockFilterResponse,
-    PctFilterRequest, 
-    PctFilterResponse, 
+    StockFilterResponse, 
     DailyQuoteResponse,
     SyncStatusResponse,
     LatestTradeDateResponse
@@ -197,80 +195,6 @@ async def stock_filter(
     
     logger.info(f"股票筛选完成: 日期={trade_date}, 结果={len(data)} 条")
     return StockFilterResponse(
-        trade_date=trade_date,
-        count=len(data),
-        data=data
-    )
-
-
-@router.post("/pct-filter", response_model=PctFilterResponse)
-async def pct_filter(
-    request: PctFilterRequest,
-    db: AsyncSession = Depends(get_db)
-):
-    """根据涨跌幅筛选股票（兼容旧接口）
-    
-    如果本地没有该日期的数据，会自动从 Tushare 同步
-    """
-    trade_date = datetime.strptime(request.trade_date, "%Y%m%d").date()
-    logger.info(f"涨跌幅筛选请求: 日期={request.trade_date}, 涨跌幅={request.min_pct}%~{request.max_pct}%")
-    
-    exists = await tushare_service.check_data_exists(db, trade_date)
-    if not exists:
-        logger.info(f"本地无 {request.trade_date} 行情数据，开始同步...")
-        try:
-            synced_count = await tushare_service.sync_daily_quotes(db, trade_date)
-            if synced_count == 0:
-                raise HTTPException(
-                    status_code=404, 
-                    detail=f"未找到 {request.trade_date} 的交易数据"
-                )
-            logger.info(f"行情数据同步完成: {synced_count} 条")
-        except HTTPException:
-            raise
-        except Exception as e:
-            logger.error(f"同步行情数据失败: {e}")
-            raise HTTPException(
-                status_code=500, 
-                detail=f"同步数据失败: {str(e)}"
-            )
-    
-    query = (
-        select(DailyQuote, Stock)
-        .join(Stock, DailyQuote.ts_code == Stock.ts_code)
-        .where(
-            and_(
-                DailyQuote.trade_date == trade_date,
-                DailyQuote.pct_chg >= request.min_pct,
-                DailyQuote.pct_chg <= request.max_pct
-            )
-        )
-        .order_by(DailyQuote.pct_chg.desc())
-    )
-    
-    result = await db.execute(query)
-    rows = result.all()
-    
-    data = []
-    for daily_quote, stock in rows:
-        data.append(DailyQuoteResponse(
-            ts_code=daily_quote.ts_code,
-            symbol=stock.symbol,
-            name=stock.name,
-            trade_date=daily_quote.trade_date,
-            open=float(daily_quote.open) if daily_quote.open else None,
-            high=float(daily_quote.high) if daily_quote.high else None,
-            low=float(daily_quote.low) if daily_quote.low else None,
-            close=float(daily_quote.close) if daily_quote.close else None,
-            pre_close=float(daily_quote.pre_close) if daily_quote.pre_close else None,
-            change=float(daily_quote.change) if daily_quote.change else None,
-            pct_chg=float(daily_quote.pct_chg) if daily_quote.pct_chg else None,
-            vol=float(daily_quote.vol) if daily_quote.vol else None,
-            amount=float(daily_quote.amount) if daily_quote.amount else None,
-        ))
-    
-    logger.info(f"涨跌幅筛选完成: 日期={trade_date}, 结果={len(data)} 条")
-    return PctFilterResponse(
         trade_date=trade_date,
         count=len(data),
         data=data
