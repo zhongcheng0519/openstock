@@ -58,6 +58,44 @@ async def get_latest_trade_date(
         )
 
 
+async def _ensure_data_synced(
+    db: AsyncSession,
+    trade_date: date,
+    data_type: str,
+    check_fn,
+    sync_fn,
+) -> None:
+    """确保指定日期的数据已同步到本地，不存在则自动同步
+    
+    Args:
+        db: 数据库会话
+        trade_date: 交易日期
+        data_type: 数据类型名称（用于日志）
+        check_fn: 检查数据是否存在的异步函数
+        sync_fn: 同步数据的异步函数
+    """
+    if await check_fn(db, trade_date):
+        return
+    
+    logger.info(f"本地无 {trade_date} {data_type}，开始同步...")
+    try:
+        synced_count = await sync_fn(db, trade_date)
+        if synced_count == 0:
+            raise HTTPException(
+                status_code=404,
+                detail=f"未找到 {trade_date} 的{data_type}"
+            )
+        logger.info(f"{data_type}同步完成: {synced_count} 条")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"同步{data_type}失败: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"同步{data_type}失败: {str(e)}"
+        )
+
+
 @router.post("/filter", response_model=StockFilterResponse)
 async def stock_filter(
     request: StockFilterRequest,
@@ -71,67 +109,23 @@ async def stock_filter(
     """
     trade_date = datetime.strptime(request.trade_date, "%Y%m%d").date()
     logger.info(f"股票筛选请求: 日期={request.trade_date}, 涨跌幅={request.min_pct}%~{request.max_pct}%")
-    
-    hq_exists = await tushare_service.check_data_exists(db, trade_date)
-    if not hq_exists:
-        logger.info(f"本地无 {request.trade_date} 行情数据，开始同步...")
-        try:
-            synced_count = await tushare_service.sync_daily_quotes(db, trade_date)
-            if synced_count == 0:
-                raise HTTPException(
-                    status_code=404, 
-                    detail=f"未找到 {request.trade_date} 的交易数据"
-                )
-            logger.info(f"行情数据同步完成: {synced_count} 条")
-        except HTTPException:
-            raise
-        except Exception as e:
-            logger.error(f"同步行情数据失败: {e}")
-            raise HTTPException(
-                status_code=500, 
-                detail=f"同步行情数据失败: {str(e)}"
-            )
-    
-    basic_exists = await tushare_service.check_basic_data_exists(db, trade_date)
-    if not basic_exists:
-        logger.info(f"本地无 {request.trade_date} 基本面数据，开始同步...")
-        try:
-            synced_count = await tushare_service.sync_daily_basic(db, trade_date)
-            if synced_count == 0:
-                raise HTTPException(
-                    status_code=404, 
-                    detail=f"未找到 {request.trade_date} 的基本面数据"
-                )
-            logger.info(f"基本面数据同步完成: {synced_count} 条")
-        except HTTPException:
-            raise
-        except Exception as e:
-            logger.error(f"同步基本面数据失败: {e}")
-            raise HTTPException(
-                status_code=500, 
-                detail=f"同步基本面数据失败: {str(e)}"
-            )
-    
-    mf_exists = await tushare_service.check_moneyflow_data_exists(db, trade_date)
-    if not mf_exists:
-        logger.info(f"本地无 {request.trade_date} 资金流向数据，开始同步...")
-        try:
-            synced_count = await tushare_service.sync_moneyflow(db, trade_date)
-            if synced_count == 0:
-                raise HTTPException(
-                    status_code=404, 
-                    detail=f"未找到 {request.trade_date} 的资金流向数据"
-                )
-            logger.info(f"资金流向数据同步完成: {synced_count} 条")
-        except HTTPException:
-            raise
-        except Exception as e:
-            logger.error(f"同步资金流向数据失败: {e}")
-            raise HTTPException(
-                status_code=500, 
-                detail=f"同步资金流向数据失败: {str(e)}"
-            )
-    
+
+    await _ensure_data_synced(
+        db, trade_date, "行情数据",
+        tushare_service.check_data_exists,
+        tushare_service.sync_daily_quotes,
+    )
+    await _ensure_data_synced(
+        db, trade_date, "基本面数据",
+        tushare_service.check_basic_data_exists,
+        tushare_service.sync_daily_basic,
+    )
+    await _ensure_data_synced(
+        db, trade_date, "资金流向数据",
+        tushare_service.check_moneyflow_data_exists,
+        tushare_service.sync_moneyflow,
+    )
+
     conditions = [
         DailyQuote.trade_date == trade_date,
         DailyQuote.pct_chg >= request.min_pct,
@@ -141,16 +135,16 @@ async def stock_filter(
         DailyBasic.pe <= request.max_pe,
         DailyBasic.turnover_rate >= request.min_turnover_rate,
     ]
-    
+
     if request.max_circ_mv is not None:
         conditions.append(DailyBasic.circ_mv <= request.max_circ_mv)
-    
+
     if request.max_turnover_rate is not None:
         conditions.append(DailyBasic.turnover_rate <= request.max_turnover_rate)
-    
+
     if request.min_net_mf_amount is not None:
         conditions.append(Moneyflow.net_mf_amount >= request.min_net_mf_amount)
-    
+
     query = (
         select(DailyQuote, DailyBasic, Stock, Moneyflow)
         .join(DailyBasic, and_(
@@ -166,10 +160,10 @@ async def stock_filter(
         .order_by(Moneyflow.net_mf_amount.desc())
         .limit(request.mf_top_n)
     )
-    
+
     result = await db.execute(query)
     rows = result.all()
-    
+
     data = []
     for daily_quote, daily_basic, stock, moneyflow in rows:
         data.append(DailyQuoteResponse(
@@ -192,7 +186,7 @@ async def stock_filter(
             net_mf_amount=float(moneyflow.net_mf_amount) if moneyflow.net_mf_amount else None,
             net_mf_vol=float(moneyflow.net_mf_vol) if moneyflow.net_mf_vol else None,
         ))
-    
+
     logger.info(f"股票筛选完成: 日期={trade_date}, 结果={len(data)} 条")
     return StockFilterResponse(
         trade_date=trade_date,
