@@ -14,7 +14,7 @@ const router = createRouter({
       path: '/',
       name: 'stock-filter',
       component: StockFilterView,
-      meta: { requiresAuth: true }
+      meta: { requiresAuth: true, keepAlive: true }
     },
     {
       path: '/stock/:ts_code',
