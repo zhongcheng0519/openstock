@@ -167,8 +167,8 @@
                 </router-link>
               </td>
               <td><span class="stock-name">{{ item.name }}</span></td>
-            <td :class="getPctColor(item.pct_chg)">{{ formatNumber(item.close) }}</td>
-            <td :class="getPctColor(item.pct_chg)">{{ formatPct(item.pct_chg) }}</td>
+            <td><span :class="getPctColor(item.pct_chg)">{{ formatNumber(item.close) }}</span></td>
+            <td><span :class="getPctColor(item.pct_chg)">{{ formatPct(item.pct_chg) }}</span></td>
             <td>{{ formatMV(item.circ_mv) }}亿</td>
             <td>{{ formatNumber(item.pe) }}</td>
             <td>{{ formatNumber(item.turnover_rate) }}%</td>
