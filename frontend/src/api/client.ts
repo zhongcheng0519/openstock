@@ -187,6 +187,45 @@ export interface LatestTradeDateResponse {
   exchange: string
 }
 
+export interface StockDetailResponse {
+  ts_code: string
+  symbol: string
+  name: string
+  area: string | null
+  industry: string | null
+  trade_date: string | null
+  open: number | null
+  high: number | null
+  low: number | null
+  close: number | null
+  pre_close: number | null
+  change: number | null
+  pct_chg: number | null
+  vol: number | null
+  amount: number | null
+  circ_mv: number | null
+  pe: number | null
+  turnover_rate: number | null
+  net_mf_amount: number | null
+  net_mf_vol: number | null
+  buy_sm_vol: number | null
+  buy_sm_amount: number | null
+  sell_sm_vol: number | null
+  sell_sm_amount: number | null
+  buy_md_vol: number | null
+  buy_md_amount: number | null
+  sell_md_vol: number | null
+  sell_md_amount: number | null
+  buy_lg_vol: number | null
+  buy_lg_amount: number | null
+  sell_lg_vol: number | null
+  sell_lg_amount: number | null
+  buy_elg_vol: number | null
+  buy_elg_amount: number | null
+  sell_elg_vol: number | null
+  sell_elg_amount: number | null
+}
+
 export const strategyApi = {
   stockFilter: (params: StockFilterRequest) => {
     const conditions: FilterCondition[] = []
@@ -236,6 +275,11 @@ export const strategyApi = {
 
   getLatestTradeDate: (exchange: string = 'SSE') =>
     apiClient.get<LatestTradeDateResponse>('/api/v1/strategy/trade-calendar/latest', { params: { exchange } }),
+
+  getStockDetail: (tsCode: string, tradeDate?: string) => {
+    const params = tradeDate ? { trade_date: tradeDate } : {}
+    return apiClient.get<StockDetailResponse>(`/api/v1/strategy/stock/${tsCode}`, { params })
+  },
 }
 
 export const authApi = {

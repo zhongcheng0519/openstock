@@ -13,7 +13,8 @@ from app.api.schemas import (
     StockFilterResponse, 
     DailyQuoteResponse,
     SyncStatusResponse,
-    LatestTradeDateResponse
+    LatestTradeDateResponse,
+    StockDetailResponse
 )
 
 router = APIRouter(prefix="/api/v1/strategy", tags=["strategy"])
@@ -273,3 +274,119 @@ async def sync_daily(
             status_code=500,
             detail=f"同步失败: {str(e)}"
         )
+
+
+@router.get("/stock/{ts_code}", response_model=StockDetailResponse)
+async def get_stock_detail(
+    ts_code: str,
+    trade_date: str | None = None,
+    db: AsyncSession = Depends(get_db)
+):
+    """获取股票详情
+    
+    根据股票代码和交易日期获取股票的详细信息，包括：
+    - 股票基本信息（代码、名称、地域、行业）
+    - 行情数据（收盘价、涨跌幅、换手率等）
+    - 资金流向数据（大单、中单、小单、特大单的买入/卖出量和金额）
+    
+    Args:
+        ts_code: 股票代码（如 000001.SZ）
+        trade_date: 交易日期 (YYYYMMDD)，可选，默认最新交易日
+    """
+    if trade_date is None:
+        latest_date = await tushare_service.get_latest_trade_date(db, 'SSE')
+        if latest_date is None:
+            raise HTTPException(
+                status_code=404,
+                detail="未找到最近的交易日"
+            )
+        trade_date = latest_date.strftime('%Y%m%d')
+    
+    if trade_date:
+        trade_date = trade_date.replace('-', '')
+    
+    trade_date_obj = datetime.strptime(trade_date, "%Y%m%d").date()
+    logger.info(f"获取股票详情: ts_code={ts_code}, 日期={trade_date}")
+
+    await _ensure_data_synced(
+        db, trade_date_obj, "行情数据",
+        tushare_service.check_data_exists,
+        tushare_service.sync_daily_quotes,
+    )
+    await _ensure_data_synced(
+        db, trade_date_obj, "基本面数据",
+        tushare_service.check_basic_data_exists,
+        tushare_service.sync_daily_basic,
+    )
+    await _ensure_data_synced(
+        db, trade_date_obj, "资金流向数据",
+        tushare_service.check_moneyflow_data_exists,
+        tushare_service.sync_moneyflow,
+    )
+
+    query = (
+        select(Stock, DailyQuote, DailyBasic, Moneyflow)
+        .join(DailyQuote, and_(
+            Stock.ts_code == DailyQuote.ts_code,
+            DailyQuote.trade_date == trade_date_obj
+        ))
+        .join(DailyBasic, and_(
+            Stock.ts_code == DailyBasic.ts_code,
+            DailyBasic.trade_date == trade_date_obj
+        ))
+        .join(Moneyflow, and_(
+            Stock.ts_code == Moneyflow.ts_code,
+            Moneyflow.trade_date == trade_date_obj
+        ))
+        .where(Stock.ts_code == ts_code)
+    )
+
+    result = await db.execute(query)
+    row = result.first()
+
+    if row is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"未找到股票 {ts_code} 在 {trade_date} 的数据"
+        )
+
+    stock, daily_quote, daily_basic, moneyflow = row
+
+    return StockDetailResponse(
+        ts_code=stock.ts_code,
+        symbol=stock.symbol,
+        name=stock.name,
+        area=stock.area,
+        industry=stock.industry,
+        trade_date=daily_quote.trade_date,
+        open=float(daily_quote.open) if daily_quote.open else None,
+        high=float(daily_quote.high) if daily_quote.high else None,
+        low=float(daily_quote.low) if daily_quote.low else None,
+        close=float(daily_quote.close) if daily_quote.close else None,
+        pre_close=float(daily_quote.pre_close) if daily_quote.pre_close else None,
+        change=float(daily_quote.change) if daily_quote.change else None,
+        pct_chg=float(daily_quote.pct_chg) if daily_quote.pct_chg else None,
+        vol=float(daily_quote.vol) if daily_quote.vol else None,
+        amount=float(daily_quote.amount) if daily_quote.amount else None,
+        circ_mv=float(daily_basic.circ_mv) if daily_basic.circ_mv else None,
+        pe=float(daily_basic.pe) if daily_basic.pe else None,
+        turnover_rate=float(daily_basic.turnover_rate) if daily_basic.turnover_rate else None,
+        net_mf_amount=float(moneyflow.net_mf_amount) if moneyflow.net_mf_amount else None,
+        net_mf_vol=float(moneyflow.net_mf_vol) if moneyflow.net_mf_vol else None,
+        buy_sm_vol=float(moneyflow.buy_sm_vol) if moneyflow.buy_sm_vol else None,
+        buy_sm_amount=float(moneyflow.buy_sm_amount) if moneyflow.buy_sm_amount else None,
+        sell_sm_vol=float(moneyflow.sell_sm_vol) if moneyflow.sell_sm_vol else None,
+        sell_sm_amount=float(moneyflow.sell_sm_amount) if moneyflow.sell_sm_amount else None,
+        buy_md_vol=float(moneyflow.buy_md_vol) if moneyflow.buy_md_vol else None,
+        buy_md_amount=float(moneyflow.buy_md_amount) if moneyflow.buy_md_amount else None,
+        sell_md_vol=float(moneyflow.sell_md_vol) if moneyflow.sell_md_vol else None,
+        sell_md_amount=float(moneyflow.sell_md_amount) if moneyflow.sell_md_amount else None,
+        buy_lg_vol=float(moneyflow.buy_lg_vol) if moneyflow.buy_lg_vol else None,
+        buy_lg_amount=float(moneyflow.buy_lg_amount) if moneyflow.buy_lg_amount else None,
+        sell_lg_vol=float(moneyflow.sell_lg_vol) if moneyflow.sell_lg_vol else None,
+        sell_lg_amount=float(moneyflow.sell_lg_amount) if moneyflow.sell_lg_amount else None,
+        buy_elg_vol=float(moneyflow.buy_elg_vol) if moneyflow.buy_elg_vol else None,
+        buy_elg_amount=float(moneyflow.buy_elg_amount) if moneyflow.buy_elg_amount else None,
+        sell_elg_vol=float(moneyflow.sell_elg_vol) if moneyflow.sell_elg_vol else None,
+        sell_elg_amount=float(moneyflow.sell_elg_amount) if moneyflow.sell_elg_amount else None,
+    )

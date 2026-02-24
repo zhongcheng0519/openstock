@@ -183,3 +183,9 @@ openstock/
 4. **Always manage loading states** in async operations
 5. **No semicolons** in TypeScript
 6. **Single quotes** in TypeScript
+7. **Stock color convention**: 红色表示涨，绿色表示跌（涨跌幅、净流入等）
+8. **尽量组件化**: 将可复用的 UI 部分提取为独立组件
+
+## External Resources
+
+- **Tushare Pro 文档**: https://tushare.pro/document/2

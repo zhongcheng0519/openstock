@@ -237,3 +237,46 @@ class LatestTradeDateResponse(BaseModel):
     """最新交易日响应"""
     trade_date: str
     exchange: str
+
+
+class StockDetailResponse(BaseModel):
+    """股票详情响应"""
+    ts_code: str
+    symbol: str
+    name: str
+    area: Optional[str] = None
+    industry: Optional[str] = None
+    trade_date: Optional[date] = None
+    open: Optional[float] = None
+    high: Optional[float] = None
+    low: Optional[float] = None
+    close: Optional[float] = None
+    pre_close: Optional[float] = None
+    change: Optional[float] = None
+    pct_chg: Optional[float] = None
+    vol: Optional[float] = None
+    amount: Optional[float] = None
+    circ_mv: Optional[float] = None
+    pe: Optional[float] = None
+    turnover_rate: Optional[float] = None
+    net_mf_amount: Optional[float] = None
+    net_mf_vol: Optional[float] = None
+    buy_sm_vol: Optional[float] = None
+    buy_sm_amount: Optional[float] = None
+    sell_sm_vol: Optional[float] = None
+    sell_sm_amount: Optional[float] = None
+    buy_md_vol: Optional[float] = None
+    buy_md_amount: Optional[float] = None
+    sell_md_vol: Optional[float] = None
+    sell_md_amount: Optional[float] = None
+    buy_lg_vol: Optional[float] = None
+    buy_lg_amount: Optional[float] = None
+    sell_lg_vol: Optional[float] = None
+    sell_lg_amount: Optional[float] = None
+    buy_elg_vol: Optional[float] = None
+    buy_elg_amount: Optional[float] = None
+    sell_elg_vol: Optional[float] = None
+    sell_elg_amount: Optional[float] = None
+    
+    class Config:
+        from_attributes = True

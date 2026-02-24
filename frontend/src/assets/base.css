@@ -18,6 +18,32 @@
   --gray-800: #1f2937;
   --gray-900: #111827;
   
+  /* 红色系 */
+  --red-50: #fef2f2;
+  --red-100: #fee2e2;
+  --red-200: #fecaca;
+  --red-300: #fca5a5;
+  --red-400: #f87171;
+  --red-500: #ef4444;
+  --red-600: #dc2626;
+  --red-700: #b91c1c;
+  --red-800: #991b1b;
+  
+  /* 绿色系 */
+  --green-50: #f0fdf4;
+  --green-100: #dcfce7;
+  --green-200: #bbf7d0;
+  --green-300: #86efac;
+  --green-400: #4ade80;
+  --green-500: #22c55e;
+  --green-600: #16a34a;
+  --green-700: #15803d;
+  --green-800: #166534;
+  
+  /* 蓝色系 */
+  --blue-600: #2563eb;
+  --blue-800: #1e40af;
+  
   /* 语义色 */
   --success: #10b981;
   --warning: #f59e0b;
@@ -983,4 +1009,161 @@ body {
   .navbar-user .user-name {
     display: none;
   }
+}
+
+/* 详情卡片样式 */
+.detail-card {
+  background: white;
+  border-radius: 0.75rem;
+  box-shadow: var(--shadow);
+  padding: 1.5rem;
+  border: 1px solid var(--gray-100);
+  margin-bottom: 1.5rem;
+}
+
+.detail-card-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--gray-800);
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--gray-100);
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .detail-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.detail-label {
+  font-size: 0.875rem;
+  color: var(--gray-500);
+}
+
+.detail-value {
+  font-size: 1rem;
+  color: var(--gray-800);
+}
+
+.text-lg {
+  font-size: 1.125rem;
+  line-height: 1.75rem;
+}
+
+.text-red-600 {
+  color: var(--red-600);
+}
+
+.text-green-600 {
+  color: var(--green-600);
+}
+
+.text-gray-500 {
+  color: var(--gray-500);
+}
+
+.text-gray-800 {
+  color: var(--gray-800);
+}
+
+.stock-code-link {
+  color: var(--blue-600);
+  cursor: pointer;
+  font-family: monospace;
+  text-decoration: none;
+}
+
+.stock-code-link:hover {
+  color: var(--blue-800);
+  text-decoration: underline;
+}
+
+.color-up {
+  color: var(--red-600);
+}
+
+.color-down {
+  color: var(--green-600);
+}
+
+.color-neutral {
+  color: var(--gray-500);
+}
+
+.moneyflow-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.moneyflow-section {
+  padding: 1rem;
+  background: var(--gray-50);
+  border-radius: 0.5rem;
+}
+
+.moneyflow-section-title {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--gray-700);
+  margin-bottom: 0.75rem;
+}
+
+.moneyflow-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .moneyflow-row {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.moneyflow-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+}
+
+.moneyflow-item.buy {
+  background: var(--red-50);
+}
+
+.moneyflow-item.sell {
+  background: var(--green-50);
+}
+
+.moneyflow-label {
+  font-size: 0.75rem;
+  color: var(--gray-500);
+}
+
+.moneyflow-value {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.moneyflow-item.buy .moneyflow-value {
+  color: var(--red-600);
+}
+
+.moneyflow-item.sell .moneyflow-value {
+  color: var(--green-600);
 }

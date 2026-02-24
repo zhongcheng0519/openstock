@@ -157,9 +157,16 @@
               <th>净流入额</th>
             </tr>
           </template>
-          <tr v-for="item in results" :key="item.ts_code">
-            <td><span class="stock-code">{{ item.ts_code }}</span></td>
-            <td><span class="stock-name">{{ item.name }}</span></td>
+            <tr v-for="item in results" :key="item.ts_code">
+              <td>
+                <router-link
+                  :to="{ name: 'stock-detail', params: { ts_code: item.ts_code }, query: { trade_date: currentTradeDate } }"
+                  class="stock-code-link"
+                >
+                  {{ item.ts_code }}
+                </router-link>
+              </td>
+              <td><span class="stock-name">{{ item.name }}</span></td>
             <td>{{ formatNumber(item.close) }}</td>
             <td :class="getPctColor(item.pct_chg)">{{ formatPct(item.pct_chg) }}</td>
             <td>{{ formatMV(item.circ_mv) }}亿</td>

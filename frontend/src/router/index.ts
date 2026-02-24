@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import StockFilterView from '../views/StockFilterView.vue'
+import StockDetailView from '../views/StockDetailView.vue'
 import LoginView from '../views/LoginView.vue'
 import RegisterView from '../views/RegisterView.vue'
 import ProfileView from '../views/ProfileView.vue'
@@ -13,6 +14,12 @@ const router = createRouter({
       path: '/',
       name: 'stock-filter',
       component: StockFilterView,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/stock/:ts_code',
+      name: 'stock-detail',
+      component: StockDetailView,
       meta: { requiresAuth: true }
     },
     {
