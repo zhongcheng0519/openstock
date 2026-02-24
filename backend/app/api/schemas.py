@@ -84,8 +84,8 @@ class UserRegisterRequest(BaseModel):
     @field_validator('username')
     @classmethod
     def validate_username(cls, v):
-        if not v.replace('_', '').isalnum():
-            raise ValueError('用户名只能包含字母、数字、下划线')
+        if not v.replace('_', '').replace('.', '').replace('-', '').isalnum():
+            raise ValueError('用户名只能包含字母、数字、下划线、点、连字符')
         return v
     
     @field_validator('phone')
@@ -162,8 +162,8 @@ class UserCreateRequest(BaseModel):
     @field_validator('username')
     @classmethod
     def validate_username(cls, v):
-        if not v.replace('_', '').isalnum():
-            raise ValueError('用户名只能包含字母、数字、下划线')
+        if not v.replace('_', '').replace('.', '').replace('-', '').isalnum():
+            raise ValueError('用户名只能包含字母、数字、下划线、点、连字符')
         return v
     
     @field_validator('phone')

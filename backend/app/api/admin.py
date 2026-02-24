@@ -76,6 +76,11 @@ async def create_user(
     current_user: User = Depends(get_current_admin_user),
     db: AsyncSession = Depends(get_db)
 ):
+    # #region agent log
+    import json
+    with open('/Users/Zhuanz/Code/GitHub/openstock/.cursor/debug-28cd59.log', 'a') as f:
+        f.write(json.dumps({"sessionId":"28cd59","location":"admin.py:79","message":"create_user entered successfully with validated data","data":{"username":data.username,"nickname":data.nickname,"email":data.email,"phone":data.phone,"role":data.role,"has_password":bool(data.password)},"timestamp":int(__import__('time').time()*1000),"hypothesisId":"H1-H5","runId":"initial"}) + '\n')
+    # #endregion
     result = await db.execute(select(User).where(User.username == data.username))
     if result.scalar_one_or_none():
         raise HTTPException(

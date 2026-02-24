@@ -167,7 +167,7 @@
                 </router-link>
               </td>
               <td><span class="stock-name">{{ item.name }}</span></td>
-            <td>{{ formatNumber(item.close) }}</td>
+            <td :class="getPctColor(item.pct_chg)">{{ formatNumber(item.close) }}</td>
             <td :class="getPctColor(item.pct_chg)">{{ formatPct(item.pct_chg) }}</td>
             <td>{{ formatMV(item.circ_mv) }}亿</td>
             <td>{{ formatNumber(item.pe) }}</td>
@@ -275,14 +275,14 @@ const getPctColor = (val: number | null) => {
   if (val === null || val === undefined) return 'text-gray-500'
   if (val > 0) return 'text-red-600'
   if (val < 0) return 'text-green-600'
-  return 'text-gray-600'
+  return 'text-black'
 }
 
 const getMfColor = (val: number | null) => {
   if (val === null || val === undefined) return 'text-gray-500'
   if (val > 0) return 'text-red-600'
   if (val < 0) return 'text-green-600'
-  return 'text-gray-600'
+  return 'text-black'
 }
 
 const formatMfAmount = (val: number | null) => {
