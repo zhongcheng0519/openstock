@@ -104,6 +104,18 @@
               />
             </div>
             <div class="form-group">
+              <label class="label">成交量倍数 (倍)</label>
+              <el-input-number
+                v-model="filterForm.vol_ratio"
+                :min="1"
+                :max="20"
+                :step="0.5"
+                :precision="1"
+                placeholder="不限制"
+                class="w-full"
+              />
+            </div>
+            <div class="form-group">
               <label class="label">结果数量</label>
               <el-select v-model="filterForm.mf_top_n" class="w-full">
                 <el-option :value="10" label="前 10 只" />
@@ -213,6 +225,7 @@ const filterForm = reactive({
   min_turnover_rate: 5,
   max_turnover_rate: null as number | null,
   min_net_mf_amount: null as number | null,
+  vol_ratio: null as number | null,
   mf_top_n: 30,
 })
 
@@ -246,6 +259,7 @@ const handleFilter = async () => {
       min_turnover_rate: filterForm.min_turnover_rate,
       max_turnover_rate: filterForm.max_turnover_rate,
       min_net_mf_amount: filterForm.min_net_mf_amount,
+      vol_ratio: filterForm.vol_ratio,
       mf_top_n: filterForm.mf_top_n,
     })
     results.value = response.data.data
@@ -307,6 +321,7 @@ const resetForm = () => {
   filterForm.min_turnover_rate = 5
   filterForm.max_turnover_rate = null
   filterForm.min_net_mf_amount = null
+  filterForm.vol_ratio = null
   filterForm.mf_top_n = 30
   results.value = []
   searched.value = false

@@ -50,6 +50,7 @@ export interface StockFilterRequest {
   min_turnover_rate?: number
   max_turnover_rate?: number | null
   min_net_mf_amount?: number | null
+  vol_ratio?: number | null
   mf_top_n?: number
 }
 
@@ -62,6 +63,7 @@ export interface FilterCondition {
 export interface StockFilterBackendRequest {
   trade_date: string
   conditions: FilterCondition[]
+  vol_ratio: number | null
   mf_top_n: number
 }
 
@@ -258,9 +260,12 @@ export const strategyApi = {
       conditions.push({ field: 'net_mf_amount', operator: 'gte', value: params.min_net_mf_amount })
     }
 
+    const vol_ratio = params.vol_ratio !== undefined && params.vol_ratio !== null ? params.vol_ratio : null
+
     const backendRequest: StockFilterBackendRequest = {
       trade_date: params.trade_date,
       conditions,
+      vol_ratio,
       mf_top_n: params.mf_top_n || 30
     }
     
