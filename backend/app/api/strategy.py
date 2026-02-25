@@ -19,7 +19,8 @@ from app.api.schemas import (
     StockDetailResponse,
     FavoriteStockResponse,
     FavoriteStockListResponse,
-    AddFavoriteRequest
+    AddFavoriteRequest,
+    StockSearchItem
 )
 
 router = APIRouter(prefix="/api/v1/strategy", tags=["strategy"])
@@ -587,3 +588,28 @@ async def check_favorite_status(
     favorite = result.scalar_one_or_none()
     
     return {"is_favorited": favorite is not None}
+
+
+@router.get("/stocks/search", response_model=list[StockSearchItem])
+async def search_stocks(
+    q: str = "",
+    limit: int = 20,
+    db: AsyncSession = Depends(get_db)
+):
+    """搜索股票，支持按代码或名称模糊搜索"""
+    if not q or len(q) < 1:
+        return []
+    
+    pattern = f"%{q}%"
+    result = await db.execute(
+        select(Stock).where(
+            (Stock.ts_code.ilike(pattern)) | 
+            (Stock.name.ilike(pattern))
+        ).limit(limit)
+    )
+    stocks = result.scalars().all()
+    
+    return [
+        StockSearchItem(ts_code=stock.ts_code, name=stock.name)
+        for stock in stocks
+    ]

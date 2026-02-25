@@ -304,3 +304,12 @@ class FavoriteStockListResponse(BaseModel):
 class AddFavoriteRequest(BaseModel):
     """添加自选股请求"""
     ts_code: str = Field(..., min_length=6, max_length=20, description="股票代码(如000001.SZ)")
+
+
+class StockSearchItem(BaseModel):
+    """股票搜索结果项"""
+    ts_code: str
+    name: str
+    
+    class Config:
+        from_attributes = True

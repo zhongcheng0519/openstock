@@ -210,6 +210,11 @@ export interface FavoriteStatusResponse {
   is_favorited: boolean
 }
 
+export interface StockSearchItem {
+  ts_code: string
+  name: string
+}
+
 export interface StockDetailResponse {
   ts_code: string
   symbol: string
@@ -318,6 +323,11 @@ export const strategyApi = {
 
   checkFavoriteStatus: (tsCode: string) =>
     apiClient.get<FavoriteStatusResponse>(`/api/v1/strategy/favorites/${tsCode}/status`),
+
+  searchStocks: (query: string, limit: number = 20) =>
+    apiClient.get<StockSearchItem[]>('/api/v1/strategy/stocks/search', { 
+      params: { q: query, limit } 
+    }),
 }
 
 export const authApi = {

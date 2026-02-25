@@ -186,6 +186,7 @@ openstock/
 - `POST /api/v1/strategy/favorites` - 添加自选股 (`{ts_code: string}`)
 - `DELETE /api/v1/strategy/favorites/{ts_code}` - 删除自选股
 - `GET /api/v1/strategy/favorites/{ts_code}/status` - 检查是否已添加
+- `GET /api/v1/strategy/stocks/search` - 搜索股票 (`?q=代码或名称`) - 支持模糊搜索
 
 **相关文件**:
 - `backend/app/models/stock.py` - UserFavorite 模型
