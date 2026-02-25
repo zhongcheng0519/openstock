@@ -2,19 +2,24 @@ from datetime import date, datetime, timedelta
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_, column
+from sqlalchemy import select, and_, column, func
 from loguru import logger
 
 from app.db.base import get_db
-from app.models.stock import Stock, DailyQuote, DailyBasic, Moneyflow
+from app.models.stock import Stock, DailyQuote, DailyBasic, Moneyflow, UserFavorite
+from app.models.stock import User
 from app.services.tushare_service import tushare_service
+from app.api.auth import get_current_user
 from app.api.schemas import (
     StockFilterRequest,
     StockFilterResponse, 
     DailyQuoteResponse,
     SyncStatusResponse,
     LatestTradeDateResponse,
-    StockDetailResponse
+    StockDetailResponse,
+    FavoriteStockResponse,
+    FavoriteStockListResponse,
+    AddFavoriteRequest
 )
 
 router = APIRouter(prefix="/api/v1/strategy", tags=["strategy"])
@@ -448,3 +453,137 @@ async def get_stock_detail(
         sell_elg_vol=float(moneyflow.sell_elg_vol) if moneyflow.sell_elg_vol else None,
         sell_elg_amount=float(moneyflow.sell_elg_amount) if moneyflow.sell_elg_amount else None,
     )
+
+
+@router.get("/favorites", response_model=FavoriteStockListResponse)
+async def get_favorites(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """获取当前用户的自选股列表"""
+    query = (
+        select(UserFavorite, Stock)
+        .outerjoin(Stock, UserFavorite.ts_code == Stock.ts_code)
+        .where(UserFavorite.user_id == current_user.id)
+        .order_by(UserFavorite.created_at.desc())
+    )
+    
+    result = await db.execute(query)
+    rows = result.all()
+    
+    items = []
+    for favorite, stock in rows:
+        items.append(FavoriteStockResponse(
+            id=favorite.id,
+            user_id=favorite.user_id,
+            ts_code=favorite.ts_code,
+            stock_name=stock.name if stock else None,
+            created_at=favorite.created_at
+        ))
+    
+    return FavoriteStockListResponse(
+        total=len(items),
+        items=items
+    )
+
+
+@router.post("/favorites", response_model=FavoriteStockResponse)
+async def add_favorite(
+    request: AddFavoriteRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """添加自选股"""
+    stock_result = await db.execute(
+        select(Stock).where(Stock.ts_code == request.ts_code)
+    )
+    stock = stock_result.scalar_one_or_none()
+    
+    if stock is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"股票 {request.ts_code} 不存在"
+        )
+    
+    existing = await db.execute(
+        select(UserFavorite).where(
+            and_(
+                UserFavorite.user_id == current_user.id,
+                UserFavorite.ts_code == request.ts_code
+            )
+        )
+    )
+    if existing.scalar_one_or_none():
+        raise HTTPException(
+            status_code=400,
+            detail="该股票已在自选股中"
+        )
+    
+    favorite = UserFavorite(
+        user_id=current_user.id,
+        ts_code=request.ts_code
+    )
+    db.add(favorite)
+    await db.commit()
+    await db.refresh(favorite)
+    
+    logger.info(f"用户 {current_user.id} 添加自选股: {request.ts_code}")
+    
+    return FavoriteStockResponse(
+        id=favorite.id,
+        user_id=favorite.user_id,
+        ts_code=favorite.ts_code,
+        stock_name=stock.name,
+        created_at=favorite.created_at
+    )
+
+
+@router.delete("/favorites/{ts_code}")
+async def remove_favorite(
+    ts_code: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """删除自选股"""
+    result = await db.execute(
+        select(UserFavorite).where(
+            and_(
+                UserFavorite.user_id == current_user.id,
+                UserFavorite.ts_code == ts_code
+            )
+        )
+    )
+    favorite = result.scalar_one_or_none()
+    
+    if favorite is None:
+        raise HTTPException(
+            status_code=404,
+            detail="自选股不存在"
+        )
+    
+    await db.delete(favorite)
+    await db.commit()
+    
+    logger.info(f"用户 {current_user.id} 删除自选股: {ts_code}")
+    
+    return {"message": "删除成功"}
+
+
+@router.get("/favorites/{ts_code}/status")
+async def check_favorite_status(
+    ts_code: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """检查股票是否在自选股中"""
+    result = await db.execute(
+        select(UserFavorite).where(
+            and_(
+                UserFavorite.user_id == current_user.id,
+                UserFavorite.ts_code == ts_code
+            )
+        )
+    )
+    favorite = result.scalar_one_or_none()
+    
+    return {"is_favorited": favorite is not None}

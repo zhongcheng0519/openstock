@@ -175,6 +175,24 @@ openstock/
 | `frontend/.prettierrc.json` | No semis, single quotes, width 100 |
 | `frontend/tsconfig.app.json` | Path alias `@/` → `./src/` |
 
+## Features
+
+### 自选股功能
+
+用户可以将股票添加到自选股列表，方便跟踪关注。
+
+**后端 API**:
+- `GET /api/v1/strategy/favorites` - 获取当前用户的自选股列表
+- `POST /api/v1/strategy/favorites` - 添加自选股 (`{ts_code: string}`)
+- `DELETE /api/v1/strategy/favorites/{ts_code}` - 删除自选股
+- `GET /api/v1/strategy/favorites/{ts_code}/status` - 检查是否已添加
+
+**相关文件**:
+- `backend/app/models/stock.py` - UserFavorite 模型
+- `backend/app/api/strategy.py` - 自选股 API 接口
+- `frontend/src/views/FavoritesView.vue` - 自选股列表页面
+- `frontend/src/views/StockDetailView.vue` - 股票详情页自选股按钮
+
 ## Notes
 
 1. **Chinese comments** for business logic

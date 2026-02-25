@@ -189,6 +189,27 @@ export interface LatestTradeDateResponse {
   exchange: string
 }
 
+export interface FavoriteStock {
+  id: number
+  user_id: number
+  ts_code: string
+  stock_name: string | null
+  created_at: string
+}
+
+export interface FavoriteStockListResponse {
+  total: number
+  items: FavoriteStock[]
+}
+
+export interface AddFavoriteRequest {
+  ts_code: string
+}
+
+export interface FavoriteStatusResponse {
+  is_favorited: boolean
+}
+
 export interface StockDetailResponse {
   ts_code: string
   symbol: string
@@ -285,6 +306,18 @@ export const strategyApi = {
     const params = tradeDate ? { trade_date: tradeDate } : {}
     return apiClient.get<StockDetailResponse>(`/api/v1/strategy/stock/${tsCode}`, { params })
   },
+
+  getFavorites: () =>
+    apiClient.get<FavoriteStockListResponse>('/api/v1/strategy/favorites'),
+
+  addFavorite: (tsCode: string) =>
+    apiClient.post<FavoriteStock>('/api/v1/strategy/favorites', { ts_code: tsCode }),
+
+  removeFavorite: (tsCode: string) =>
+    apiClient.delete(`/api/v1/strategy/favorites/${tsCode}`),
+
+  checkFavoriteStatus: (tsCode: string) =>
+    apiClient.get<FavoriteStatusResponse>(`/api/v1/strategy/favorites/${tsCode}/status`),
 }
 
 export const authApi = {

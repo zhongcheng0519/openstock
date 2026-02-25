@@ -281,3 +281,26 @@ class StockDetailResponse(BaseModel):
     
     class Config:
         from_attributes = True
+
+
+class FavoriteStockResponse(BaseModel):
+    """自选股响应"""
+    id: int
+    user_id: int
+    ts_code: str
+    stock_name: Optional[str] = None
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+
+class FavoriteStockListResponse(BaseModel):
+    """自选股列表响应"""
+    total: int
+    items: list[FavoriteStockResponse]
+
+
+class AddFavoriteRequest(BaseModel):
+    """添加自选股请求"""
+    ts_code: str = Field(..., min_length=6, max_length=20, description="股票代码(如000001.SZ)")

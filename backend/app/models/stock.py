@@ -149,6 +149,7 @@ class User(Base):
     created_by: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("users.id"), nullable=True, comment="创建者用户ID")
     
     logs: Mapped[list["UserLog"]] = relationship("UserLog", back_populates="user", lazy="selectin")
+    favorites: Mapped[list["UserFavorite"]] = relationship("UserFavorite", back_populates="user", lazy="selectin")
     
     __table_args__ = (
         Index("idx_users_username", "username"),
@@ -204,3 +205,24 @@ class TradeCalendar(Base):
     
     def __repr__(self) -> str:
         return f"<TradeCalendar(exchange='{self.exchange}', cal_date='{self.cal_date}', is_open={self.is_open})>"
+
+
+class UserFavorite(Base):
+    """用户自选股表"""
+    __tablename__ = "user_favorites"
+    
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True, comment="主键")
+    user_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.id"), nullable=False, comment="用户ID")
+    ts_code: Mapped[str] = mapped_column(String(20), nullable=False, comment="股票代码")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False, comment="添加时间")
+    
+    user: Mapped[User] = relationship("User", back_populates="favorites")
+    
+    __table_args__ = (
+        Index("idx_user_favorites_user_id", "user_id"),
+        Index("idx_user_favorites_ts_code", "ts_code"),
+        Index("idx_user_favorites_user_ts", "user_id", "ts_code", unique=True),
+    )
+    
+    def __repr__(self) -> str:
+        return f"<UserFavorite(user_id={self.user_id}, ts_code='{self.ts_code}')>"
