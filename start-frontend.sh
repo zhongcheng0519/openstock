@@ -16,5 +16,5 @@ fi
 
 # 启动开发服务器
 echo "✅ 启动 Vue 开发服务器..."
-echo "🌐 访问地址: http://localhost:5173"
+echo "🌐 访问地址: http://localhost:5172"
 npm run dev

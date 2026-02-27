@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     
     # 应用配置
     APP_HOST: str = "0.0.0.0"
-    APP_PORT: int = 8000
+    APP_PORT: int = 8002
     DEBUG: bool = False
     LOG_FILE: str | None = None
     

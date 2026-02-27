@@ -93,6 +93,11 @@ class TushareService:
             logger.warning(f"未获取到日期 {date_str} 的日线行情数据")
             return 0
         
+        existing_codes = set()
+        result = await db.execute(select(Stock.ts_code))
+        for row in result:
+            existing_codes.add(row[0])
+        
         # 检查是否已有数据
         result = await db.execute(
             select(DailyQuote).where(DailyQuote.trade_date == trade_date).limit(1)
@@ -106,6 +111,8 @@ class TushareService:
         # 批量插入数据
         quotes_data = []
         for _, row in df.iterrows():
+            if row['ts_code'] not in existing_codes:
+                continue
             quote = {
                 'ts_code': row['ts_code'],
                 'trade_date': trade_date,
@@ -155,6 +162,11 @@ class TushareService:
             logger.warning(f"未获取到日期 {date_str} 的基本面数据")
             return 0
         
+        existing_codes = set()
+        result = await db.execute(select(Stock.ts_code))
+        for row in result:
+            existing_codes.add(row[0])
+        
         result = await db.execute(
             select(DailyBasic).where(DailyBasic.trade_date == trade_date).limit(1)
         )
@@ -165,6 +177,8 @@ class TushareService:
         
         basics_data = []
         for _, row in df.iterrows():
+            if row['ts_code'] not in existing_codes:
+                continue
             basic = {
                 'ts_code': row['ts_code'],
                 'trade_date': trade_date,
@@ -221,6 +235,11 @@ class TushareService:
             logger.warning(f"未获取到日期 {date_str} 的资金流向数据")
             return 0
         
+        existing_codes = set()
+        result = await db.execute(select(Stock.ts_code))
+        for row in result:
+            existing_codes.add(row[0])
+        
         result = await db.execute(
             select(Moneyflow).where(Moneyflow.trade_date == trade_date).limit(1)
         )
@@ -231,6 +250,8 @@ class TushareService:
         
         moneyflow_data = []
         for _, row in df.iterrows():
+            if row['ts_code'] not in existing_codes:
+                continue
             mf = {
                 'ts_code': row['ts_code'],
                 'trade_date': trade_date,

@@ -37,5 +37,5 @@ uv run alembic upgrade head
 
 # 启动服务
 echo "✅ 启动 FastAPI 服务..."
-echo "📖 API 文档: http://localhost:8000/docs"
+echo "📖 API 文档: http://localhost:8002/docs"
 uv run python -m app.main
