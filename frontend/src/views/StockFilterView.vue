@@ -154,6 +154,14 @@
           <div class="result-count">
             找到 <strong>{{ results.length }}</strong> 只股票
           </div>
+          <ActionButton
+            type="button"
+            variant="secondary"
+            icon="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+            @click="handleExport"
+          >
+            导出 Excel
+          </ActionButton>
         </div>
 
         <DataTable :loading="false" :empty="false">
@@ -202,6 +210,7 @@
 <script setup lang="ts">
 import { reactive, ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import * as XLSX from 'xlsx'
 import { strategyApi, type DailyQuote } from '@/api/client'
 import AppNavbar from '@/components/AppNavbar.vue'
 import PageHeader from '@/components/PageHeader.vue'
@@ -325,5 +334,31 @@ const resetForm = () => {
   filterForm.mf_top_n = 30
   results.value = []
   searched.value = false
+}
+
+const handleExport = () => {
+  if (results.value.length === 0) {
+    ElMessage.warning('没有数据可导出')
+    return
+  }
+
+  const exportData = results.value.map((item) => ({
+    '股票代码': item.ts_code,
+    '股票名称': item.name,
+    '收盘价': item.close,
+    '涨跌幅': item.pct_chg,
+    '流通市值(亿)': item.circ_mv ? (item.circ_mv / 10000).toFixed(2) : '-',
+    '市盈率': item.pe,
+    '换手率(%)': item.turnover_rate,
+    '净流入额(万)': item.net_mf_amount,
+  }))
+
+  const ws = XLSX.utils.json_to_sheet(exportData)
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, '条件选股')
+
+  const fileName = `条件选股_${filterForm.trade_date}.xlsx`
+  XLSX.writeFile(wb, fileName)
+  ElMessage.success('导出成功')
 }
 </script>

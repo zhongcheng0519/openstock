@@ -215,6 +215,40 @@ export interface StockSearchItem {
   name: string
 }
 
+export interface FirstLimitRequest {
+  start_date: string
+  end_date: string
+  limit_count?: number
+}
+
+export interface FirstLimitStock {
+  ts_code: string
+  symbol: string
+  name: string
+  trade_date: string
+  first_limit_date: string
+  open: number | null
+  high: number | null
+  low: number | null
+  close: number | null
+  pre_close: number | null
+  change: number | null
+  pct_chg: number | null
+  vol: number | null
+  amount: number | null
+  circ_mv: number | null
+  pe: number | null
+  turnover_rate: number | null
+}
+
+export interface FirstLimitResponse {
+  start_date: string
+  end_date: string
+  limit_count: number
+  count: number
+  data: FirstLimitStock[]
+}
+
 export interface StockDetailResponse {
   ts_code: string
   symbol: string
@@ -292,7 +326,7 @@ export const strategyApi = {
       trade_date: params.trade_date,
       conditions,
       vol_ratio,
-      mf_top_n: params.mf_top_n || 30
+      mf_top_n: params.mf_top_n || 30,
     }
     
     return apiClient.post<StockFilterResponse>('/api/v1/strategy/filter', backendRequest)
@@ -328,6 +362,10 @@ export const strategyApi = {
     apiClient.get<StockSearchItem[]>('/api/v1/strategy/stocks/search', { 
       params: { q: query, limit } 
     }),
+
+  firstLimitFilter: (params: FirstLimitRequest) => {
+    return apiClient.post<FirstLimitResponse>('/api/v1/strategy/first-limit', params)
+  },
 }
 
 export const authApi = {

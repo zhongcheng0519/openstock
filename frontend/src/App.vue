@@ -1,15 +1,12 @@
 <script setup lang="ts">
-import { RouterView, useRoute } from 'vue-router'
-
-const route = useRoute()
+import { RouterView } from 'vue-router'
 </script>
 
 <template>
   <RouterView v-slot="{ Component }">
     <keep-alive>
-      <component :is="Component" v-if="route.meta.keepAlive" />
+      <component :is="Component" />
     </keep-alive>
-    <component :is="Component" v-if="!route.meta.keepAlive" />
   </RouterView>
 </template>
 

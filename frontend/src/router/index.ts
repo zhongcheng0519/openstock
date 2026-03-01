@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import StockFilterView from '../views/StockFilterView.vue'
+import FirstLimitView from '../views/FirstLimitView.vue'
 import StockDetailView from '../views/StockDetailView.vue'
 import LoginView from '../views/LoginView.vue'
 import RegisterView from '../views/RegisterView.vue'
@@ -15,6 +16,12 @@ const router = createRouter({
       path: '/',
       name: 'stock-filter',
       component: StockFilterView,
+      meta: { requiresAuth: true, keepAlive: true }
+    },
+    {
+      path: '/first-limit',
+      name: 'first-limit',
+      component: FirstLimitView,
       meta: { requiresAuth: true, keepAlive: true }
     },
     {

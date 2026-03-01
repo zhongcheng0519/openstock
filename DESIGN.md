@@ -262,7 +262,9 @@
   LIMIT 1
   ```
 
-### 1. 股票筛选接口
+### 1. 股票筛选接口（条件选股）
+
+适用于单日条件选股，根据用户设定的条件筛选股票。
 
 - **URL**: `POST /api/v1/strategy/filter`
 
@@ -316,6 +318,84 @@
   ORDER BY m.net_mf_amount DESC
   LIMIT :mf_top_n
   ```
+
+### 2. 首板选股接口
+
+适用于一段时间内筛选首次涨停的股票，即在指定时间范围内找出首次出现涨停的股票。
+
+- **URL**: `POST /api/v1/strategy/first-limit`
+
+- **Payload**:
+
+  ```json
+  {
+    "start_date": "20240101",
+    "end_date": "20241027",
+    "limit_count": 1,
+    "min_circ_mv": null,
+    "max_circ_mv": null,
+    "min_pe": null,
+    "max_pe": null,
+    "min_turnover_rate": null,
+    "max_turnover_rate": null
+  }
+  ```
+
+- **参数说明**:
+
+  | **参数名**         | **类型** | **必填** | **默认值**  | **说明**                       |
+  | ------------------ | -------- | -------- | ----------- | ------------------------------ |
+  | start_date         | string   | 是       | -           | 起始时间 (YYYYMMDD，默认当年1月1日) |
+  | end_date           | string   | 是       | -           | 终止时间 (YYYYMMDD，默认当天)   |
+  | limit_count        | int      | 否       | 1           | 出现过x次涨停                  |
+  | min_circ_mv        | float    | 否       | null        | 最小流通市值 (万元)            |
+  | max_circ_mv        | float    |否        | null        | 最大流通市值 (万元)            |
+  | min_pe             | float    | 否       | null        | 最小市盈率                     |
+  | max_pe             | float    | 否       | null        | 最大市盈率                     |
+  | min_turnover_rate  | float    | 否       | null        | 最小换手率 (%)                 |
+  | max_turnover_rate  | float    | 否       | null        | 最大换手率 (%)                 |
+
+- **筛选逻辑**:
+
+  1. 查询指定时间范围内所有涨停的股票 (`pct_chg >= 9.9%`)
+  2. 对于每只股票，统计其在该时间段内的涨停次数
+  3. 筛选出涨停次数等于 `limit_count` 的股票（即首次出现涨停的股票）
+  4. 可叠加其他筛选条件（市值、PE、换手率等）
+
+  ```sql
+  -- 统计每只股票在时间范围内的涨停次数
+  WITH limit_stocks AS (
+    SELECT ts_code, trade_date,
+           ROW_NUMBER() OVER (PARTITION BY ts_code ORDER BY trade_date) as limit_order
+    FROM daily_hq
+    WHERE trade_date BETWEEN :start_date AND :end_date
+      AND pct_chg >= 9.9
+  ),
+  -- 筛选涨停次数等于limit_count的股票（即第x次涨停）
+  target_stocks AS (
+    SELECT ts_code, trade_date as first_limit_date
+    FROM limit_stocks
+    WHERE limit_order = :limit_count
+  )
+  -- 关联基本面数据
+  SELECT h.*, b.circ_mv, b.pe, b.turnover_rate, t.first_limit_date
+  FROM target_stocks t
+  JOIN daily_hq h ON t.ts_code = h.ts_code AND t.first_limit_date = h.trade_date
+  JOIN daily_basic b ON h.ts_code = b.ts_code AND h.trade_date = b.trade_date
+  WHERE (:min_circ_mv IS NULL OR b.circ_mv >= :min_circ_mv)
+    AND (:max_circ_mv IS NULL OR b.circ_mv <= :max_circ_mv)
+    AND (:min_pe IS NULL OR b.pe >= :min_pe)
+    AND (:max_pe IS NULL OR b.pe <= :max_pe)
+    AND (:min_turnover_rate IS NULL OR b.turnover_rate >= :min_turnover_rate)
+    AND (:max_turnover_rate IS NULL OR b.turnover_rate <= :max_turnover_rate)
+  ORDER BY t.first_limit_date DESC
+  ```
+
+  > **说明**:
+  > - 涨停阈值使用 9.9%，因为ST股票涨停为5%
+  > - `limit_count=1` 表示首次涨停（首板），`limit_count=2` 表示第二次涨停（一进二），以此类推
+  > - 返回结果包含首次涨停的日期，便于了解涨停发生的时间
+  > - 默认值：起始时间为当年1月1日，终止时间为当前交易日，涨停次数为1
 
 ### 2. 用户认证接口
 

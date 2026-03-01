@@ -313,3 +313,43 @@ class StockSearchItem(BaseModel):
     
     class Config:
         from_attributes = True
+
+
+class FirstLimitRequest(BaseModel):
+    """首板选股请求"""
+    start_date: str = Field(..., description="起始时间 (YYYYMMDD)", pattern=r"^\d{8}$")
+    end_date: str = Field(..., description="终止时间 (YYYYMMDD)", pattern=r"^\d{8}$")
+    limit_count: int = Field(default=1, ge=1, le=20, description="出现过x次涨停")
+
+
+class FirstLimitStockResponse(BaseModel):
+    """首板选股结果项"""
+    ts_code: str
+    symbol: str
+    name: str
+    trade_date: date
+    first_limit_date: date
+    open: Optional[float] = None
+    high: Optional[float] = None
+    low: Optional[float] = None
+    close: Optional[float] = None
+    pre_close: Optional[float] = None
+    change: Optional[float] = None
+    pct_chg: Optional[float] = None
+    vol: Optional[float] = None
+    amount: Optional[float] = None
+    circ_mv: Optional[float] = None
+    pe: Optional[float] = None
+    turnover_rate: Optional[float] = None
+    
+    class Config:
+        from_attributes = True
+
+
+class FirstLimitResponse(BaseModel):
+    """首板选股响应"""
+    start_date: date
+    end_date: date
+    limit_count: int
+    count: int
+    data: list[FirstLimitStockResponse]

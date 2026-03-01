@@ -6,7 +6,7 @@ from sqlalchemy import select, and_, column, func
 from loguru import logger
 
 from app.db.base import get_db
-from app.models.stock import Stock, DailyQuote, DailyBasic, Moneyflow, UserFavorite
+from app.models.stock import Stock, DailyQuote, DailyBasic, Moneyflow, UserFavorite, TradeCalendar
 from app.models.stock import User
 from app.services.tushare_service import tushare_service
 from app.api.auth import get_current_user
@@ -20,7 +20,10 @@ from app.api.schemas import (
     FavoriteStockResponse,
     FavoriteStockListResponse,
     AddFavoriteRequest,
-    StockSearchItem
+    StockSearchItem,
+    FirstLimitRequest,
+    FirstLimitResponse,
+    FirstLimitStockResponse
 )
 
 router = APIRouter(prefix="/api/v1/strategy", tags=["strategy"])
@@ -283,6 +286,144 @@ async def stock_filter(
     logger.info(f"股票筛选完成: 日期={trade_date}, 结果={len(data)} 条")
     return StockFilterResponse(
         trade_date=trade_date,
+        count=len(data),
+        data=data
+    )
+
+
+@router.post("/first-limit", response_model=FirstLimitResponse)
+async def first_limit_filter(
+    request: FirstLimitRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    """首板选股筛选
+    
+    在指定时间范围内筛选首次出现涨停的股票。
+    根据 limit_count 参数筛选第N次涨停的股票（如1表示首板，2表示二连板）。
+    如果本地没有数据，会自动从 Tushare 同步。
+    
+    Args:
+        start_date: 起始时间 (YYYYMMDD)
+        end_date: 终止时间 (YYYYMMDD)
+        limit_count: 出现过x次涨停（默认1，即首板）
+    """
+    start_date = datetime.strptime(request.start_date, "%Y%m%d").date()
+    end_date = datetime.strptime(request.end_date, "%Y%m%d").date()
+    limit_count = request.limit_count
+    
+    logger.info(f"首板选股请求: 起始={request.start_date}, 终止={request.end_date}, 涨停次数={limit_count}")
+
+    # 获取时间范围内的所有交易日
+    trade_dates_result = await db.execute(
+        select(TradeCalendar.cal_date)
+        .where(
+            TradeCalendar.exchange == 'SSE',
+            TradeCalendar.is_open == True,
+            TradeCalendar.cal_date >= start_date,
+            TradeCalendar.cal_date <= end_date
+        )
+        .order_by(TradeCalendar.cal_date.asc())
+    )
+    trade_dates = [row[0] for row in trade_dates_result.all()]
+    
+    if not trade_dates:
+        raise HTTPException(
+            status_code=400,
+            detail="指定时间范围内无交易日"
+        )
+
+    # 确保所有交易日的数据都已同步
+    for trade_date in trade_dates:
+        await _ensure_data_synced(
+            db, trade_date, "行情数据",
+            tushare_service.check_data_exists,
+            tushare_service.sync_daily_quotes,
+        )
+        await _ensure_data_synced(
+            db, trade_date, "基本面数据",
+            tushare_service.check_basic_data_exists,
+            tushare_service.sync_daily_basic,
+        )
+
+    # 查询时间范围内所有涨停的股票
+    limit_up_query = (
+        select(
+            DailyQuote.ts_code,
+            DailyQuote.trade_date,
+            func.row_number().over(
+                partition_by=DailyQuote.ts_code,
+                order_by=DailyQuote.trade_date.asc()
+            ).label('limit_order')
+        )
+        .where(
+            DailyQuote.trade_date >= start_date,
+            DailyQuote.trade_date <= end_date,
+            DailyQuote.pct_chg >= 9.9
+        )
+        .subquery()
+    )
+
+    # 筛选第N次涨停的股票
+    target_stocks_query = (
+        select(limit_up_query.c.ts_code, limit_up_query.c.trade_date.label('first_limit_date'))
+        .where(limit_up_query.c.limit_order == limit_count)
+        .subquery()
+    )
+
+    # 构建主查询（首板选股不需要额外筛选条件）
+    query = (
+        select(DailyQuote, Stock, target_stocks_query.c.first_limit_date)
+        .join(target_stocks_query, and_(
+            DailyQuote.ts_code == target_stocks_query.c.ts_code,
+            DailyQuote.trade_date == target_stocks_query.c.first_limit_date
+        ))
+        .join(Stock, DailyQuote.ts_code == Stock.ts_code)
+        .join(DailyBasic, and_(
+            DailyQuote.ts_code == DailyBasic.ts_code,
+            DailyQuote.trade_date == DailyBasic.trade_date
+        ))
+        .order_by(target_stocks_query.c.first_limit_date.desc())
+    )
+
+    result = await db.execute(query)
+    rows = result.all()
+
+    data = []
+    for daily_quote, stock, first_limit_date in rows:
+        # 获取基本面数据
+        basic_result = await db.execute(
+            select(DailyBasic).where(
+                DailyBasic.ts_code == daily_quote.ts_code,
+                DailyBasic.trade_date == daily_quote.trade_date
+            )
+        )
+        daily_basic = basic_result.scalar_one_or_none()
+        
+        data.append(FirstLimitStockResponse(
+            ts_code=daily_quote.ts_code,
+            symbol=stock.symbol,
+            name=stock.name,
+            trade_date=daily_quote.trade_date,
+            first_limit_date=first_limit_date,
+            open=float(daily_quote.open) if daily_quote.open else None,
+            high=float(daily_quote.high) if daily_quote.high else None,
+            low=float(daily_quote.low) if daily_quote.low else None,
+            close=float(daily_quote.close) if daily_quote.close else None,
+            pre_close=float(daily_quote.pre_close) if daily_quote.pre_close else None,
+            change=float(daily_quote.change) if daily_quote.change else None,
+            pct_chg=float(daily_quote.pct_chg) if daily_quote.pct_chg else None,
+            vol=float(daily_quote.vol) if daily_quote.vol else None,
+            amount=float(daily_quote.amount) if daily_quote.amount else None,
+            circ_mv=float(daily_basic.circ_mv) if daily_basic and daily_basic.circ_mv else None,
+            pe=float(daily_basic.pe) if daily_basic and daily_basic.pe else None,
+            turnover_rate=float(daily_basic.turnover_rate) if daily_basic and daily_basic.turnover_rate else None,
+        ))
+
+    logger.info(f"首板选股完成: 起始={start_date}, 终止={end_date}, 涨停次数={limit_count}, 结果={len(data)} 条")
+    return FirstLimitResponse(
+        start_date=start_date,
+        end_date=end_date,
+        limit_count=limit_count,
         count=len(data),
         data=data
     )
