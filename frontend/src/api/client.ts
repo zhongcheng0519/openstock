@@ -341,6 +341,9 @@ export const strategyApi = {
   getLatestTradeDate: (exchange: string = 'SSE') =>
     apiClient.get<LatestTradeDateResponse>('/api/v1/strategy/trade-calendar/latest', { params: { exchange } }),
 
+  getCurrentTradeDate: (exchange: string = 'SSE') =>
+    apiClient.get<LatestTradeDateResponse>('/api/v1/strategy/trade-calendar/current', { params: { exchange } }),
+
   getStockDetail: (tsCode: string, tradeDate?: string) => {
     const params = tradeDate ? { trade_date: tradeDate } : {}
     return apiClient.get<StockDetailResponse>(`/api/v1/strategy/stock/${tsCode}`, { params })

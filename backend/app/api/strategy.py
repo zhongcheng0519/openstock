@@ -88,6 +88,45 @@ async def get_latest_trade_date(
         )
 
 
+@router.get("/trade-calendar/current", response_model=LatestTradeDateResponse)
+async def get_current_trade_date(
+    exchange: str = 'SSE',
+    db: AsyncSession = Depends(get_db)
+):
+    """获取当前日期（交易日）
+
+    如果今天is_open=1，返回今天；否则返回上一个交易日pretrade_date。
+    若本地数据库无数据，先调用 Tushare trade_cal 接口同步最近一个月的交易日历。
+
+    Args:
+        exchange: 交易所代码，默认 SSE (上交所)
+
+    Returns:
+        当前交易日期（格式：YYYYMMDD）
+    """
+    try:
+        current_date = await tushare_service.get_current_trade_date(db, exchange)
+        if current_date is None:
+            logger.warning(f"未找到交易所 {exchange} 的当前交易日")
+            raise HTTPException(
+                status_code=404,
+                detail="未找到当前交易日"
+            )
+        logger.info(f"获取当前交易日: {current_date} ({exchange})")
+        return LatestTradeDateResponse(
+            trade_date=current_date.strftime('%Y%m%d'),
+            exchange=exchange
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"获取当前交易日失败: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"获取交易日历失败: {str(e)}"
+        )
+
+
 async def _ensure_data_synced(
     db: AsyncSession,
     trade_date: date,

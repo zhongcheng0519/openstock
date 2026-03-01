@@ -240,10 +240,10 @@ const filterForm = reactive({
 
 onMounted(async () => {
   try {
-    const response = await strategyApi.getLatestTradeDate()
+    const response = await strategyApi.getCurrentTradeDate()
     filterForm.trade_date = response.data.trade_date
   } catch (error) {
-    console.error('获取最新交易日失败:', error)
+    console.error('获取当前交易日失败:', error)
   }
 })
 

@@ -389,36 +389,72 @@ class TushareService:
     
     async def get_latest_trade_date(self, db: AsyncSession, exchange: str = 'SSE') -> Optional[date]:
         """获取最近的交易日
-        
+
+        直接查询Tushare API，不依赖本地数据库。
+
         Args:
             db: 数据库会话
             exchange: 交易所代码，默认 SSE
-            
+
         Returns:
             最近的交易日期，如果没有返回 None
         """
-        start_date = date.today() - timedelta(days=60)
-        end_date = date.today()
-        
-        calendar_exists = await self.check_trade_calendar_exists(db, exchange, start_date, end_date)
-        if not calendar_exists:
-            await self.sync_trade_calendar(db, exchange, start_date, end_date)
-        
-        result = await db.execute(
-            select(TradeCalendar)
-            .where(
-                TradeCalendar.exchange == exchange,
-                TradeCalendar.is_open == True,
-                TradeCalendar.cal_date <= end_date,
-                TradeCalendar.cal_date >= start_date
-            )
-            .order_by(TradeCalendar.cal_date.desc())
-            .limit(1)
-        )
-        trade_cal = result.scalar_one_or_none()
-        
-        if trade_cal:
-            return trade_cal.cal_date
+        today = date.today()
+        start_date = today - timedelta(days=60)
+        start_str = start_date.strftime('%Y%m%d')
+        end_str = today.strftime('%Y%m%d')
+
+        try:
+            df = self.pro.trade_cal(exchange='', start_date=start_str, end_date=end_str)
+        except Exception as e:
+            logger.error(f"获取交易日历失败: {e}")
+            return None
+
+        if df is None or df.empty:
+            return None
+
+        trading_days = df[df['is_open'].astype(str) == '1']
+        if trading_days.empty:
+            return None
+
+        latest_date_str = trading_days['cal_date'].max()
+        return datetime.strptime(str(latest_date_str), '%Y%m%d').date()
+
+    async def get_current_trade_date(self, db: AsyncSession, exchange: str = 'SSE') -> Optional[date]:
+        """获取当前日期（交易日），如果今天不是交易日则返回上一个交易日
+
+        如果今天is_open=1，返回今天；否则返回pretrade_date。
+        直接查询Tushare API，不依赖本地数据库。
+
+        Args:
+            db: 数据库会话
+            exchange: 交易所代码，默认 SSE
+
+        Returns:
+            当前交易日期，如果没有返回 None
+        """
+        today = date.today()
+        today_str = today.strftime('%Y%m%d')
+
+        try:
+            df = self.pro.trade_cal(exchange='', start_date=today_str, end_date=today_str)
+        except Exception as e:
+            logger.error(f"获取交易日历失败: {e}")
+            return None
+
+        if df is None or df.empty:
+            return None
+
+        row = df.iloc[0]
+        is_open = str(row['is_open']) == '1' or row['is_open'] == 1 or row['is_open'] is True
+
+        if is_open:
+            return today
+
+        pretrade_date = row.get('pretrade_date')
+        if pretrade_date and pd.notna(pretrade_date):
+            return datetime.strptime(str(pretrade_date), '%Y%m%d').date()
+
         return None
 
 
