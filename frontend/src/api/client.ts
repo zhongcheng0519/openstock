@@ -288,6 +288,41 @@ export interface StockDetailResponse {
   sell_elg_amount: number | null
 }
 
+export interface StockHistoryItem {
+  trade_date: string
+  open: number | null
+  high: number | null
+  low: number | null
+  close: number | null
+  pct_chg: number | null
+  vol: number | null
+  net_mf_amount: number | null
+  net_mf_vol: number | null
+  buy_sm_vol: number | null
+  buy_sm_amount: number | null
+  sell_sm_vol: number | null
+  sell_sm_amount: number | null
+  buy_md_vol: number | null
+  buy_md_amount: number | null
+  sell_md_vol: number | null
+  sell_md_amount: number | null
+  buy_lg_vol: number | null
+  buy_lg_amount: number | null
+  sell_lg_vol: number | null
+  sell_lg_amount: number | null
+  buy_elg_vol: number | null
+  buy_elg_amount: number | null
+  sell_elg_vol: number | null
+  sell_elg_amount: number | null
+}
+
+export interface StockHistoryResponse {
+  ts_code: string
+  name: string
+  count: number
+  data: StockHistoryItem[]
+}
+
 export const strategyApi = {
   stockFilter: (params: StockFilterRequest) => {
     const conditions: FilterCondition[] = []
@@ -348,6 +383,11 @@ export const strategyApi = {
     const params = tradeDate ? { trade_date: tradeDate } : {}
     return apiClient.get<StockDetailResponse>(`/api/v1/strategy/stock/${tsCode}`, { params })
   },
+
+  getStockHistory: (tsCode: string, days: number = 30) =>
+    apiClient.get<StockHistoryResponse>(`/api/v1/strategy/stock/${tsCode}/history`, {
+      params: { days },
+    }),
 
   getFavorites: () =>
     apiClient.get<FavoriteStockListResponse>('/api/v1/strategy/favorites'),

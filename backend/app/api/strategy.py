@@ -17,6 +17,8 @@ from app.api.schemas import (
     SyncStatusResponse,
     LatestTradeDateResponse,
     StockDetailResponse,
+    StockHistoryResponse,
+    StockHistoryItem,
     FavoriteStockResponse,
     FavoriteStockListResponse,
     AddFavoriteRequest,
@@ -633,6 +635,116 @@ async def get_stock_detail(
         buy_elg_amount=float(moneyflow.buy_elg_amount) if moneyflow.buy_elg_amount else None,
         sell_elg_vol=float(moneyflow.sell_elg_vol) if moneyflow.sell_elg_vol else None,
         sell_elg_amount=float(moneyflow.sell_elg_amount) if moneyflow.sell_elg_amount else None,
+    )
+
+
+@router.get("/stock/{ts_code}/history", response_model=StockHistoryResponse)
+async def get_stock_history(
+    ts_code: str,
+    days: int = 30,
+    db: AsyncSession = Depends(get_db)
+):
+    """获取股票近N个交易日的历史数据
+
+    包含行情、资金流向、单笔成交明细，每行一个交易日，按日期倒序排列。
+
+    Args:
+        ts_code: 股票代码（如 000001.SZ）
+        days: 返回天数，默认30
+    """
+    stock_result = await db.execute(
+        select(Stock).where(Stock.ts_code == ts_code)
+    )
+    stock = stock_result.scalar_one_or_none()
+    if stock is None:
+        raise HTTPException(status_code=404, detail=f"股票 {ts_code} 不存在")
+
+    trade_dates_result = await db.execute(
+        select(TradeCalendar.cal_date)
+        .where(
+            TradeCalendar.exchange == 'SSE',
+            TradeCalendar.is_open == True,
+            TradeCalendar.cal_date <= date.today()
+        )
+        .order_by(TradeCalendar.cal_date.desc())
+        .limit(days)
+    )
+    trade_dates = [row[0] for row in trade_dates_result.all()]
+
+    if not trade_dates:
+        return StockHistoryResponse(ts_code=ts_code, name=stock.name, count=0, data=[])
+
+    valid_dates = []
+    for td in trade_dates:
+        try:
+            await _ensure_data_synced(
+                db, td, "行情数据",
+                tushare_service.check_data_exists,
+                tushare_service.sync_daily_quotes,
+            )
+            await _ensure_data_synced(
+                db, td, "资金流向数据",
+                tushare_service.check_moneyflow_data_exists,
+                tushare_service.sync_moneyflow,
+            )
+            valid_dates.append(td)
+        except HTTPException:
+            logger.warning(f"跳过无数据的交易日: {td}")
+            continue
+    trade_dates = valid_dates
+
+    query = (
+        select(DailyQuote, Moneyflow)
+        .join(Moneyflow, and_(
+            DailyQuote.ts_code == Moneyflow.ts_code,
+            DailyQuote.trade_date == Moneyflow.trade_date
+        ))
+        .where(
+            DailyQuote.ts_code == ts_code,
+            DailyQuote.trade_date.in_(trade_dates)
+        )
+        .order_by(DailyQuote.trade_date.desc())
+    )
+
+    result = await db.execute(query)
+    rows = result.all()
+
+    data = []
+    for daily_quote, moneyflow in rows:
+        data.append(StockHistoryItem(
+            trade_date=daily_quote.trade_date,
+            open=float(daily_quote.open) if daily_quote.open else None,
+            high=float(daily_quote.high) if daily_quote.high else None,
+            low=float(daily_quote.low) if daily_quote.low else None,
+            close=float(daily_quote.close) if daily_quote.close else None,
+            pct_chg=float(daily_quote.pct_chg) if daily_quote.pct_chg else None,
+            vol=float(daily_quote.vol) if daily_quote.vol else None,
+            net_mf_amount=float(moneyflow.net_mf_amount) if moneyflow.net_mf_amount else None,
+            net_mf_vol=float(moneyflow.net_mf_vol) if moneyflow.net_mf_vol else None,
+            buy_sm_vol=float(moneyflow.buy_sm_vol) if moneyflow.buy_sm_vol else None,
+            buy_sm_amount=float(moneyflow.buy_sm_amount) if moneyflow.buy_sm_amount else None,
+            sell_sm_vol=float(moneyflow.sell_sm_vol) if moneyflow.sell_sm_vol else None,
+            sell_sm_amount=float(moneyflow.sell_sm_amount) if moneyflow.sell_sm_amount else None,
+            buy_md_vol=float(moneyflow.buy_md_vol) if moneyflow.buy_md_vol else None,
+            buy_md_amount=float(moneyflow.buy_md_amount) if moneyflow.buy_md_amount else None,
+            sell_md_vol=float(moneyflow.sell_md_vol) if moneyflow.sell_md_vol else None,
+            sell_md_amount=float(moneyflow.sell_md_amount) if moneyflow.sell_md_amount else None,
+            buy_lg_vol=float(moneyflow.buy_lg_vol) if moneyflow.buy_lg_vol else None,
+            buy_lg_amount=float(moneyflow.buy_lg_amount) if moneyflow.buy_lg_amount else None,
+            sell_lg_vol=float(moneyflow.sell_lg_vol) if moneyflow.sell_lg_vol else None,
+            sell_lg_amount=float(moneyflow.sell_lg_amount) if moneyflow.sell_lg_amount else None,
+            buy_elg_vol=float(moneyflow.buy_elg_vol) if moneyflow.buy_elg_vol else None,
+            buy_elg_amount=float(moneyflow.buy_elg_amount) if moneyflow.buy_elg_amount else None,
+            sell_elg_vol=float(moneyflow.sell_elg_vol) if moneyflow.sell_elg_vol else None,
+            sell_elg_amount=float(moneyflow.sell_elg_amount) if moneyflow.sell_elg_amount else None,
+        ))
+
+    logger.info(f"获取股票历史数据: ts_code={ts_code}, 天数={days}, 结果={len(data)} 条")
+    return StockHistoryResponse(
+        ts_code=ts_code,
+        name=stock.name,
+        count=len(data),
+        data=data
     )
 
 

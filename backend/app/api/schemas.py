@@ -283,6 +283,46 @@ class StockDetailResponse(BaseModel):
         from_attributes = True
 
 
+class StockHistoryItem(BaseModel):
+    """股票历史数据项（单日）"""
+    trade_date: date
+    open: Optional[float] = None
+    high: Optional[float] = None
+    low: Optional[float] = None
+    close: Optional[float] = None
+    pct_chg: Optional[float] = None
+    vol: Optional[float] = None
+    net_mf_amount: Optional[float] = None
+    net_mf_vol: Optional[float] = None
+    buy_sm_vol: Optional[float] = None
+    buy_sm_amount: Optional[float] = None
+    sell_sm_vol: Optional[float] = None
+    sell_sm_amount: Optional[float] = None
+    buy_md_vol: Optional[float] = None
+    buy_md_amount: Optional[float] = None
+    sell_md_vol: Optional[float] = None
+    sell_md_amount: Optional[float] = None
+    buy_lg_vol: Optional[float] = None
+    buy_lg_amount: Optional[float] = None
+    sell_lg_vol: Optional[float] = None
+    sell_lg_amount: Optional[float] = None
+    buy_elg_vol: Optional[float] = None
+    buy_elg_amount: Optional[float] = None
+    sell_elg_vol: Optional[float] = None
+    sell_elg_amount: Optional[float] = None
+
+    class Config:
+        from_attributes = True
+
+
+class StockHistoryResponse(BaseModel):
+    """股票历史数据响应"""
+    ts_code: str
+    name: str
+    count: int
+    data: list[StockHistoryItem]
+
+
 class FavoriteStockResponse(BaseModel):
     """自选股响应"""
     id: int

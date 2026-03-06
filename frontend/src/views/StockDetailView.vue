@@ -83,54 +83,78 @@
           </div>
         </div>
 
-        <div class="detail-card mb-6">
-          <h3 class="detail-card-title">资金流向</h3>
-          <div class="detail-grid">
-            <DetailItem
-              label="净流入额"
-              :value="`${formatAmount(detail.net_mf_amount)}万`"
-              size-class="text-lg"
-              :color-class="getStockColor(detail.net_mf_amount)"
-            />
-            <DetailItem
-              label="净流入量"
-              :value="`${formatVol(detail.net_mf_vol)}手`"
-              :color-class="getStockColor(detail.net_mf_vol)"
-            />
-          </div>
-        </div>
-
         <div class="detail-card">
-          <h3 class="detail-card-title">单笔成交明细</h3>
-          <div class="moneyflow-grid">
-            <MoneyflowSection
-              title="小单 (≤10000股)"
-              :buy-vol="detail.buy_sm_vol"
-              :buy-amount="detail.buy_sm_amount"
-              :sell-vol="detail.sell_sm_vol"
-              :sell-amount="detail.sell_sm_amount"
-            />
-            <MoneyflowSection
-              title="中单 (10001-50000股)"
-              :buy-vol="detail.buy_md_vol"
-              :buy-amount="detail.buy_md_amount"
-              :sell-vol="detail.sell_md_vol"
-              :sell-amount="detail.sell_md_amount"
-            />
-            <MoneyflowSection
-              title="大单 (50001-100000股)"
-              :buy-vol="detail.buy_lg_vol"
-              :buy-amount="detail.buy_lg_amount"
-              :sell-vol="detail.sell_lg_vol"
-              :sell-amount="detail.sell_lg_amount"
-            />
-            <MoneyflowSection
-              title="特大单 (>100000股)"
-              :buy-vol="detail.buy_elg_vol"
-              :buy-amount="detail.buy_elg_amount"
-              :sell-vol="detail.sell_elg_vol"
-              :sell-amount="detail.sell_elg_amount"
-            />
+          <h3 class="detail-card-title">历史行情 & 资金流向</h3>
+          <div v-if="historyLoading" class="flex justify-center py-8">
+            <el-icon class="is-loading" :size="24"><Loading /></el-icon>
+          </div>
+          <div v-else class="overflow-x-auto">
+            <el-table
+              :data="historyData"
+              stripe
+              size="small"
+              :header-cell-style="{ whiteSpace: 'nowrap' }"
+              :cell-style="{ whiteSpace: 'nowrap' }"
+              table-layout="auto"
+            >
+              <el-table-column prop="trade_date" label="日期" width="100" fixed />
+              <el-table-column label="开盘" width="80" align="right">
+                <template #default="{ row }">{{ formatNumber(row.open) }}</template>
+              </el-table-column>
+              <el-table-column label="收盘" width="80" align="right">
+                <template #default="{ row }">
+                  <span :class="getStockColor(row.pct_chg)">{{ formatNumber(row.close) }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column label="最高" width="80" align="right">
+                <template #default="{ row }">{{ formatNumber(row.high) }}</template>
+              </el-table-column>
+              <el-table-column label="最低" width="80" align="right">
+                <template #default="{ row }">{{ formatNumber(row.low) }}</template>
+              </el-table-column>
+              <el-table-column label="涨跌幅" width="85" align="right">
+                <template #default="{ row }">
+                  <span :class="getStockColor(row.pct_chg)">{{ formatPct(row.pct_chg) }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column label="成交量(手)" width="105" align="right">
+                <template #default="{ row }">{{ formatVol(row.vol) }}</template>
+              </el-table-column>
+              <el-table-column label="净流入额(万)" width="115" align="right">
+                <template #default="{ row }">
+                  <span :class="getStockColor(row.net_mf_amount)">{{ formatAmount(row.net_mf_amount) }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column label="净流入量(手)" width="115" align="right">
+                <template #default="{ row }">
+                  <span :class="getStockColor(row.net_mf_vol)">{{ formatVol(row.net_mf_vol) }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column label="小单买入(万)" width="115" align="right">
+                <template #default="{ row }">{{ formatNumber(row.buy_sm_amount) }}</template>
+              </el-table-column>
+              <el-table-column label="小单卖出(万)" width="115" align="right">
+                <template #default="{ row }">{{ formatNumber(row.sell_sm_amount) }}</template>
+              </el-table-column>
+              <el-table-column label="中单买入(万)" width="115" align="right">
+                <template #default="{ row }">{{ formatNumber(row.buy_md_amount) }}</template>
+              </el-table-column>
+              <el-table-column label="中单卖出(万)" width="115" align="right">
+                <template #default="{ row }">{{ formatNumber(row.sell_md_amount) }}</template>
+              </el-table-column>
+              <el-table-column label="大单买入(万)" width="115" align="right">
+                <template #default="{ row }">{{ formatNumber(row.buy_lg_amount) }}</template>
+              </el-table-column>
+              <el-table-column label="大单卖出(万)" width="115" align="right">
+                <template #default="{ row }">{{ formatNumber(row.sell_lg_amount) }}</template>
+              </el-table-column>
+              <el-table-column label="特大单买入(万)" width="130" align="right">
+                <template #default="{ row }">{{ formatNumber(row.buy_elg_amount) }}</template>
+              </el-table-column>
+              <el-table-column label="特大单卖出(万)" width="130" align="right">
+                <template #default="{ row }">{{ formatNumber(row.sell_elg_amount) }}</template>
+              </el-table-column>
+            </el-table>
           </div>
         </div>
       </div>
@@ -149,7 +173,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Loading } from '@element-plus/icons-vue'
-import { strategyApi, type StockDetailResponse } from '@/api/client'
+import { strategyApi, type StockDetailResponse, type StockHistoryItem } from '@/api/client'
 import {
   getStockColor,
   formatStockNumber,
@@ -163,7 +187,6 @@ import PageHeader from '@/components/PageHeader.vue'
 import ActionButton from '@/components/ActionButton.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import DetailItem from '@/components/DetailItem.vue'
-import MoneyflowSection from '@/components/MoneyflowSection.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -176,6 +199,8 @@ const detail = ref<StockDetailResponse | null>(null)
 const error = ref('')
 const isFavorited = ref(false)
 const favoriteLoading = ref(false)
+const historyLoading = ref(false)
+const historyData = ref<StockHistoryItem[]>([])
 
 const stockName = computed(() => detail.value?.name || '')
 
@@ -190,6 +215,7 @@ onMounted(async () => {
     const response = await strategyApi.getStockDetail(tsCode.value, tradeDate.value)
     detail.value = response.data
     await checkFavoriteStatus()
+    fetchHistory()
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : '获取股票详情失败'
     error.value = message
@@ -198,6 +224,18 @@ onMounted(async () => {
     loading.value = false
   }
 })
+
+const fetchHistory = async () => {
+  historyLoading.value = true
+  try {
+    const response = await strategyApi.getStockHistory(tsCode.value)
+    historyData.value = response.data.data
+  } catch (err: unknown) {
+    console.error('获取历史数据失败:', err)
+  } finally {
+    historyLoading.value = false
+  }
+}
 
 const checkFavoriteStatus = async () => {
   try {
