@@ -949,9 +949,10 @@ body {
   color: var(--gray-900);
 }
 
-.navbar-link.active {
-  background: var(--primary-lighter);
-  color: var(--primary);
+.navbar-link.active,
+.navbar-link.active:hover {
+  background: var(--danger);
+  color: #fff;
 }
 
 .navbar-link svg {

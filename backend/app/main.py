@@ -1,3 +1,5 @@
+from importlib.metadata import version
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
@@ -10,12 +12,14 @@ setup_logging()
 
 from app.api import strategy, auth, admin
 
-logger.info(f"Starting server in {'debug' if settings.DEBUG else 'production'} mode")
+__version__ = version("openstock-backend")
+
+logger.info(f"OpenStock v{__version__} starting in {'debug' if settings.DEBUG else 'production'} mode")
 
 app = FastAPI(
     title="股票分析系统",
     description="基于 FastAPI 的股票分析平台",
-    version="0.1.0",
+    version=__version__,
     debug=settings.DEBUG,
 )
 
@@ -37,7 +41,7 @@ async def root():
     return {
         "message": "欢迎使用股票分析系统 API",
         "docs": "/docs",
-        "version": "0.1.0"
+        "version": __version__,
     }
 
 
