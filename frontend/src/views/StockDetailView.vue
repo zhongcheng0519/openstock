@@ -204,13 +204,16 @@ const historyData = ref<StockHistoryItem[]>([])
 
 const stockName = computed(() => detail.value?.name || '')
 
-onMounted(async () => {
+const loadStockData = async () => {
   if (!tsCode.value) {
     error.value = '股票代码不能为空'
     return
   }
 
   loading.value = true
+  error.value = ''
+  detail.value = null
+  historyData.value = []
   try {
     const response = await strategyApi.getStockDetail(tsCode.value, tradeDate.value)
     detail.value = response.data
@@ -223,6 +226,10 @@ onMounted(async () => {
   } finally {
     loading.value = false
   }
+}
+
+onMounted(() => {
+  loadStockData()
 })
 
 const fetchHistory = async () => {

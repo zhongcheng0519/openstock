@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8002'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -84,6 +84,7 @@ export interface DailyQuote {
   circ_mv: number | null
   pe: number | null
   turnover_rate: number | null
+  volume_ratio: number | null
   net_mf_amount: number | null
   net_mf_vol: number | null
 }

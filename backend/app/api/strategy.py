@@ -1,4 +1,4 @@
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -192,8 +192,6 @@ async def stock_filter(
     trade_date = datetime.strptime(request.trade_date, "%Y%m%d").date()
     logger.info(f"股票筛选请求: 日期={request.trade_date}, 条件数={len(request.conditions)}, vol_ratio={request.vol_ratio}, 条件={request.conditions}")
 
-    prev_trade_date = trade_date - timedelta(days=1)
-
     await _ensure_data_synced(
         db, trade_date, "行情数据",
         tushare_service.check_data_exists,
@@ -209,12 +207,6 @@ async def stock_filter(
         tushare_service.check_moneyflow_data_exists,
         tushare_service.sync_moneyflow,
     )
-    if request.vol_ratio is not None:
-        await _ensure_data_synced(
-            db, prev_trade_date, "前一日行情数据",
-            tushare_service.check_data_exists,
-            tushare_service.sync_daily_quotes,
-        )
 
     conditions = [DailyQuote.trade_date == trade_date]
     
@@ -233,77 +225,30 @@ async def stock_filter(
         conditions.append(OPERATOR_MAP[cond.operator](column, cond.value))
 
     if request.vol_ratio is not None:
-        prev_vol_subquery = (
-            select(
-                DailyQuote.ts_code,
-                DailyQuote.vol.label('prev_vol')
-            )
-            .where(DailyQuote.trade_date == prev_trade_date)
-            .subquery()
-        )
-        query = (
-            select(DailyQuote, DailyBasic, Stock, Moneyflow, prev_vol_subquery.c.prev_vol)
-            .join(DailyBasic, and_(
-                DailyQuote.ts_code == DailyBasic.ts_code,
-                DailyQuote.trade_date == DailyBasic.trade_date
-            ))
-            .join(Stock, DailyQuote.ts_code == Stock.ts_code)
-            .join(Moneyflow, and_(
-                DailyQuote.ts_code == Moneyflow.ts_code,
-                DailyQuote.trade_date == Moneyflow.trade_date
-            ))
-            .join(prev_vol_subquery, DailyQuote.ts_code == prev_vol_subquery.c.ts_code)
-            .where(and_(*conditions))
-            .where(DailyQuote.vol >= prev_vol_subquery.c.prev_vol * request.vol_ratio)
-            .order_by(Moneyflow.net_mf_amount.desc())
-            .limit(request.mf_top_n)
-        )
-    else:
-        query = (
-            select(DailyQuote, DailyBasic, Stock, Moneyflow)
-            .join(DailyBasic, and_(
-                DailyQuote.ts_code == DailyBasic.ts_code,
-                DailyQuote.trade_date == DailyBasic.trade_date
-            ))
-            .join(Stock, DailyQuote.ts_code == Stock.ts_code)
-            .join(Moneyflow, and_(
-                DailyQuote.ts_code == Moneyflow.ts_code,
-                DailyQuote.trade_date == Moneyflow.trade_date
-            ))
-            .where(and_(*conditions))
-            .order_by(Moneyflow.net_mf_amount.desc())
-            .limit(request.mf_top_n)
-        )
+        conditions.append(DailyBasic.volume_ratio >= request.vol_ratio)
+
+    query = (
+        select(DailyQuote, DailyBasic, Stock, Moneyflow)
+        .join(DailyBasic, and_(
+            DailyQuote.ts_code == DailyBasic.ts_code,
+            DailyQuote.trade_date == DailyBasic.trade_date
+        ))
+        .join(Stock, DailyQuote.ts_code == Stock.ts_code)
+        .join(Moneyflow, and_(
+            DailyQuote.ts_code == Moneyflow.ts_code,
+            DailyQuote.trade_date == Moneyflow.trade_date
+        ))
+        .where(and_(*conditions))
+        .order_by(Moneyflow.net_mf_amount.desc())
+        .limit(request.mf_top_n)
+    )
 
     result = await db.execute(query)
     rows = result.all()
 
     data = []
-    if request.vol_ratio is not None:
-        for daily_quote, daily_basic, stock, moneyflow, prev_vol in rows:
-            data.append(DailyQuoteResponse(
-                ts_code=daily_quote.ts_code,
-                symbol=stock.symbol,
-                name=stock.name,
-                trade_date=daily_quote.trade_date,
-                open=float(daily_quote.open) if daily_quote.open else None,
-                high=float(daily_quote.high) if daily_quote.high else None,
-                low=float(daily_quote.low) if daily_quote.low else None,
-                close=float(daily_quote.close) if daily_quote.close else None,
-                pre_close=float(daily_quote.pre_close) if daily_quote.pre_close else None,
-                change=float(daily_quote.change) if daily_quote.change else None,
-                pct_chg=float(daily_quote.pct_chg) if daily_quote.pct_chg else None,
-                vol=float(daily_quote.vol) if daily_quote.vol else None,
-                amount=float(daily_quote.amount) if daily_quote.amount else None,
-                circ_mv=float(daily_basic.circ_mv) if daily_basic.circ_mv else None,
-                pe=float(daily_basic.pe) if daily_basic.pe else None,
-                turnover_rate=float(daily_basic.turnover_rate) if daily_basic.turnover_rate else None,
-                net_mf_amount=float(moneyflow.net_mf_amount) if moneyflow.net_mf_amount else None,
-                net_mf_vol=float(moneyflow.net_mf_vol) if moneyflow.net_mf_vol else None,
-            ))
-    else:
-        for daily_quote, daily_basic, stock, moneyflow in rows:
-            data.append(DailyQuoteResponse(
+    for daily_quote, daily_basic, stock, moneyflow in rows:
+        data.append(DailyQuoteResponse(
             ts_code=daily_quote.ts_code,
             symbol=stock.symbol,
             name=stock.name,
@@ -320,6 +265,7 @@ async def stock_filter(
             circ_mv=float(daily_basic.circ_mv) if daily_basic.circ_mv else None,
             pe=float(daily_basic.pe) if daily_basic.pe else None,
             turnover_rate=float(daily_basic.turnover_rate) if daily_basic.turnover_rate else None,
+            volume_ratio=float(daily_basic.volume_ratio) if daily_basic.volume_ratio else None,
             net_mf_amount=float(moneyflow.net_mf_amount) if moneyflow.net_mf_amount else None,
             net_mf_vol=float(moneyflow.net_mf_vol) if moneyflow.net_mf_vol else None,
         ))
@@ -658,6 +604,15 @@ async def get_stock_history(
     stock = stock_result.scalar_one_or_none()
     if stock is None:
         raise HTTPException(status_code=404, detail=f"股票 {ts_code} 不存在")
+
+    max_cal_result = await db.execute(
+        select(func.max(TradeCalendar.cal_date)).where(
+            TradeCalendar.exchange == 'SSE'
+        )
+    )
+    max_cal_date = max_cal_result.scalar()
+    if max_cal_date is None or max_cal_date < date.today():
+        await tushare_service.sync_trade_calendar(db, exchange='SSE')
 
     trade_dates_result = await db.execute(
         select(TradeCalendar.cal_date)

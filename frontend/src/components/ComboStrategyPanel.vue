@@ -97,11 +97,11 @@
             />
           </div>
           <div class="form-group">
-            <label class="label">成交量倍数 (倍)</label>
+            <label class="label">量比最小值</label>
             <el-input-number
               v-model="filterForm.vol_ratio"
-              :min="1"
-              :max="20"
+              :min="0.5"
+              :max="30"
               :step="0.5"
               :precision="1"
               placeholder="不限制"
@@ -166,6 +166,8 @@
             <th>流通市值</th>
             <th>市盈率</th>
             <th>换手率</th>
+            <th>成交量</th>
+            <th>量比</th>
             <th>净流入额</th>
           </tr>
         </template>
@@ -184,6 +186,8 @@
           <td>{{ formatMV(item.circ_mv) }}亿</td>
           <td>{{ formatNumber(item.pe) }}</td>
           <td>{{ formatNumber(item.turnover_rate) }}%</td>
+          <td>{{ formatVol(item.vol) }}</td>
+          <td>{{ formatNumber(item.volume_ratio) }}</td>
           <td :class="getMfColor(item.net_mf_amount)">{{ formatMfAmount(item.net_mf_amount) }}万</td>
         </tr>
       </DataTable>
@@ -302,6 +306,12 @@ const formatMfAmount = (val: number | null) => {
   return `${prefix}${val.toFixed(2)}`
 }
 
+const formatVol = (val: number | null) => {
+  if (val === null || val === undefined) return '-'
+  if (val >= 10000) return (val / 10000).toFixed(2) + '万手'
+  return val.toFixed(0) + '手'
+}
+
 const formatMV = (val: number | null) => {
   if (val === null || val === undefined) return '-'
   return (val / 10000).toFixed(2)
@@ -338,6 +348,8 @@ const handleExport = () => {
     '流通市值(亿)': item.circ_mv ? (item.circ_mv / 10000).toFixed(2) : '-',
     '市盈率': item.pe,
     '换手率(%)': item.turnover_rate,
+    '成交量(手)': item.vol,
+    '量比': item.volume_ratio,
     '净流入额(万)': item.net_mf_amount,
   }))
 

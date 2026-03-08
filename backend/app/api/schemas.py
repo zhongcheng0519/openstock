@@ -20,7 +20,7 @@ class StockFilterRequest(BaseModel):
         ],
         description="筛选条件列表，所有条件为 AND 关系"
     )
-    vol_ratio: float | None = Field(default=None, description="当日成交量为前一日的倍数，可选，不传则不筛选")
+    vol_ratio: float | None = Field(default=None, description="量比最小值，可选，不传则不筛选")
     mf_top_n: int = Field(default=30, ge=1, le=500, description="按净流入额排名取前N只股票")
 
 
@@ -54,6 +54,7 @@ class DailyQuoteResponse(BaseModel):
     circ_mv: Optional[float] = None
     pe: Optional[float] = None
     turnover_rate: Optional[float] = None
+    volume_ratio: Optional[float] = None
     net_mf_amount: Optional[float] = None
     net_mf_vol: Optional[float] = None
     
