@@ -168,6 +168,8 @@
             <th>换手率</th>
             <th>成交量</th>
             <th>量比</th>
+            <th>内盘</th>
+            <th>外盘</th>
             <th>净流入额</th>
           </tr>
         </template>
@@ -188,6 +190,8 @@
           <td>{{ formatNumber(item.turnover_rate) }}%</td>
           <td>{{ formatVol(item.vol) }}</td>
           <td>{{ formatNumber(item.volume_ratio) }}</td>
+          <td>{{ formatVol(item.selling) }}</td>
+          <td>{{ formatVol(item.buying) }}</td>
           <td :class="getMfColor(item.net_mf_amount)">{{ formatMfAmount(item.net_mf_amount) }}万</td>
         </tr>
       </DataTable>
@@ -350,6 +354,8 @@ const handleExport = () => {
     '换手率(%)': item.turnover_rate,
     '成交量(手)': item.vol,
     '量比': item.volume_ratio,
+    '内盘(手)': item.selling,
+    '外盘(手)': item.buying,
     '净流入额(万)': item.net_mf_amount,
   }))
 

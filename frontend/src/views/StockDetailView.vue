@@ -79,6 +79,8 @@
                 :value="`${formatVol(detail.vol)}手`"
                 :color-class="getStockColor(detail.pct_chg)"
               />
+              <DetailItem label="内盘(主动卖)" :value="`${formatVol(detail.selling)}手`" />
+              <DetailItem label="外盘(主动买)" :value="`${formatVol(detail.buying)}手`" />
             </div>
           </div>
         </div>

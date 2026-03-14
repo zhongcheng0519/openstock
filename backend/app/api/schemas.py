@@ -57,6 +57,8 @@ class DailyQuoteResponse(BaseModel):
     volume_ratio: Optional[float] = None
     net_mf_amount: Optional[float] = None
     net_mf_vol: Optional[float] = None
+    selling: Optional[float] = None
+    buying: Optional[float] = None
     
     class Config:
         from_attributes = True
@@ -279,6 +281,8 @@ class StockDetailResponse(BaseModel):
     buy_elg_amount: Optional[float] = None
     sell_elg_vol: Optional[float] = None
     sell_elg_amount: Optional[float] = None
+    selling: Optional[float] = None
+    buying: Optional[float] = None
     
     class Config:
         from_attributes = True

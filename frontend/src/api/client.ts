@@ -87,6 +87,8 @@ export interface DailyQuote {
   volume_ratio: number | null
   net_mf_amount: number | null
   net_mf_vol: number | null
+  selling: number | null
+  buying: number | null
 }
 
 export interface StockFilterResponse {
@@ -287,6 +289,8 @@ export interface StockDetailResponse {
   buy_elg_amount: number | null
   sell_elg_vol: number | null
   sell_elg_amount: number | null
+  selling: number | null
+  buying: number | null
 }
 
 export interface StockHistoryItem {

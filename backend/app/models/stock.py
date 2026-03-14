@@ -19,6 +19,7 @@ class Stock(Base):
     daily_quotes: Mapped[list["DailyQuote"]] = relationship("DailyQuote", back_populates="stock", lazy="selectin")
     daily_basics: Mapped[list["DailyBasic"]] = relationship("DailyBasic", back_populates="stock", lazy="selectin")
     moneyflows: Mapped[list["Moneyflow"]] = relationship("Moneyflow", back_populates="stock", lazy="selectin")
+    bak_dailys: Mapped[list["BakDaily"]] = relationship("BakDaily", back_populates="stock", lazy="selectin")
     
     def __repr__(self) -> str:
         return f"<Stock(ts_code='{self.ts_code}', name='{self.name}')>"
@@ -130,6 +131,28 @@ class DailyBasic(Base):
     
     def __repr__(self) -> str:
         return f"<DailyBasic(ts_code='{self.ts_code}', trade_date='{self.trade_date}', circ_mv={self.circ_mv})>"
+
+
+class BakDaily(Base):
+    """备用行情表 (内盘/外盘等补充数据)"""
+    __tablename__ = "bak_daily"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True, comment="主键")
+    ts_code: Mapped[str] = mapped_column(String(20), ForeignKey("stocks.ts_code"), nullable=False, comment="股票代码")
+    trade_date: Mapped[date] = mapped_column(Date, nullable=False, comment="交易日期")
+    selling: Mapped[float | None] = mapped_column(Numeric(18, 4), nullable=True, comment="内盘(主动卖, 手)")
+    buying: Mapped[float | None] = mapped_column(Numeric(18, 4), nullable=True, comment="外盘(主动买, 手)")
+
+    stock: Mapped[Stock] = relationship("Stock", back_populates="bak_dailys")
+
+    __table_args__ = (
+        Index("idx_bak_daily_ts_code", "ts_code"),
+        Index("idx_bak_daily_trade_date", "trade_date"),
+        Index("idx_bak_daily_ts_trade", "ts_code", "trade_date", unique=True),
+    )
+
+    def __repr__(self) -> str:
+        return f"<BakDaily(ts_code='{self.ts_code}', trade_date='{self.trade_date}')>"
 
 
 class User(Base):

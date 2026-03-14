@@ -7,7 +7,7 @@ from sqlalchemy import select, insert
 from loguru import logger
 
 from app.core.config import get_settings
-from app.models.stock import Stock, DailyQuote, DailyBasic, Moneyflow, TradeCalendar
+from app.models.stock import Stock, DailyQuote, DailyBasic, Moneyflow, BakDaily, TradeCalendar
 
 settings = get_settings()
 
@@ -290,6 +290,67 @@ class TushareService:
         )
         return result.scalar_one_or_none() is not None
     
+    async def sync_bak_daily(self, db: AsyncSession, trade_date: date) -> int:
+        """Sync bak_daily data (selling/buying) for a given trade date
+
+        Args:
+            db: database session
+            trade_date: trade date
+
+        Returns:
+            number of synced records
+        """
+        date_str = trade_date.strftime('%Y%m%d')
+
+        logger.info(f"开始同步备用行情数据: {date_str}")
+
+        df = self.pro.bak_daily(
+            trade_date=date_str,
+            fields='ts_code,trade_date,selling,buying'
+        )
+
+        if df is None or df.empty:
+            logger.warning(f"未获取到日期 {date_str} 的备用行情数据")
+            return 0
+
+        existing_codes = set()
+        result = await db.execute(select(Stock.ts_code))
+        for row in result:
+            existing_codes.add(row[0])
+
+        result = await db.execute(
+            select(BakDaily).where(BakDaily.trade_date == trade_date).limit(1)
+        )
+        if result.scalar_one_or_none():
+            await db.execute(
+                BakDaily.__table__.delete().where(BakDaily.trade_date == trade_date)
+            )
+
+        bak_data = []
+        for _, row in df.iterrows():
+            if row['ts_code'] not in existing_codes:
+                continue
+            bak_data.append({
+                'ts_code': row['ts_code'],
+                'trade_date': trade_date,
+                'selling': float(row['selling']) if pd.notna(row.get('selling')) else None,
+                'buying': float(row['buying']) if pd.notna(row.get('buying')) else None,
+            })
+
+        if bak_data:
+            await db.execute(insert(BakDaily), bak_data)
+            await db.commit()
+
+        logger.info(f"备用行情数据同步完成: {len(bak_data)} 条")
+        return len(bak_data)
+
+    async def check_bak_daily_data_exists(self, db: AsyncSession, trade_date: date) -> bool:
+        """Check if bak_daily data exists for the given trade date"""
+        result = await db.execute(
+            select(BakDaily).where(BakDaily.trade_date == trade_date).limit(1)
+        )
+        return result.scalar_one_or_none() is not None
+
     async def sync_trade_calendar(
         self, 
         db: AsyncSession, 

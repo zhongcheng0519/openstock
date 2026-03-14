@@ -6,7 +6,7 @@ from sqlalchemy import select, and_, column, func
 from loguru import logger
 
 from app.db.base import get_db
-from app.models.stock import Stock, DailyQuote, DailyBasic, Moneyflow, UserFavorite, TradeCalendar
+from app.models.stock import Stock, DailyQuote, DailyBasic, Moneyflow, BakDaily, UserFavorite, TradeCalendar
 from app.models.stock import User
 from app.services.tushare_service import tushare_service
 from app.api.auth import get_current_user
@@ -207,6 +207,11 @@ async def stock_filter(
         tushare_service.check_moneyflow_data_exists,
         tushare_service.sync_moneyflow,
     )
+    await _ensure_data_synced(
+        db, trade_date, "备用行情数据",
+        tushare_service.check_bak_daily_data_exists,
+        tushare_service.sync_bak_daily,
+    )
 
     conditions = [DailyQuote.trade_date == trade_date]
     
@@ -228,7 +233,7 @@ async def stock_filter(
         conditions.append(DailyBasic.volume_ratio >= request.vol_ratio)
 
     query = (
-        select(DailyQuote, DailyBasic, Stock, Moneyflow)
+        select(DailyQuote, DailyBasic, Stock, Moneyflow, BakDaily)
         .join(DailyBasic, and_(
             DailyQuote.ts_code == DailyBasic.ts_code,
             DailyQuote.trade_date == DailyBasic.trade_date
@@ -237,6 +242,10 @@ async def stock_filter(
         .join(Moneyflow, and_(
             DailyQuote.ts_code == Moneyflow.ts_code,
             DailyQuote.trade_date == Moneyflow.trade_date
+        ))
+        .outerjoin(BakDaily, and_(
+            DailyQuote.ts_code == BakDaily.ts_code,
+            DailyQuote.trade_date == BakDaily.trade_date
         ))
         .where(and_(*conditions))
         .order_by(Moneyflow.net_mf_amount.desc())
@@ -247,7 +256,7 @@ async def stock_filter(
     rows = result.all()
 
     data = []
-    for daily_quote, daily_basic, stock, moneyflow in rows:
+    for daily_quote, daily_basic, stock, moneyflow, bak_daily in rows:
         data.append(DailyQuoteResponse(
             ts_code=daily_quote.ts_code,
             symbol=stock.symbol,
@@ -268,6 +277,8 @@ async def stock_filter(
             volume_ratio=float(daily_basic.volume_ratio) if daily_basic.volume_ratio else None,
             net_mf_amount=float(moneyflow.net_mf_amount) if moneyflow.net_mf_amount else None,
             net_mf_vol=float(moneyflow.net_mf_vol) if moneyflow.net_mf_vol else None,
+            selling=float(bak_daily.selling) if bak_daily and bak_daily.selling else None,
+            buying=float(bak_daily.buying) if bak_daily and bak_daily.buying else None,
         ))
 
     logger.info(f"股票筛选完成: 日期={trade_date}, 结果={len(data)} 条")
@@ -515,9 +526,14 @@ async def get_stock_detail(
         tushare_service.check_moneyflow_data_exists,
         tushare_service.sync_moneyflow,
     )
+    await _ensure_data_synced(
+        db, trade_date_obj, "备用行情数据",
+        tushare_service.check_bak_daily_data_exists,
+        tushare_service.sync_bak_daily,
+    )
 
     query = (
-        select(Stock, DailyQuote, DailyBasic, Moneyflow)
+        select(Stock, DailyQuote, DailyBasic, Moneyflow, BakDaily)
         .join(DailyQuote, and_(
             Stock.ts_code == DailyQuote.ts_code,
             DailyQuote.trade_date == trade_date_obj
@@ -529,6 +545,10 @@ async def get_stock_detail(
         .join(Moneyflow, and_(
             Stock.ts_code == Moneyflow.ts_code,
             Moneyflow.trade_date == trade_date_obj
+        ))
+        .outerjoin(BakDaily, and_(
+            Stock.ts_code == BakDaily.ts_code,
+            BakDaily.trade_date == trade_date_obj
         ))
         .where(Stock.ts_code == ts_code)
     )
@@ -542,7 +562,7 @@ async def get_stock_detail(
             detail=f"未找到股票 {ts_code} 在 {trade_date} 的数据"
         )
 
-    stock, daily_quote, daily_basic, moneyflow = row
+    stock, daily_quote, daily_basic, moneyflow, bak_daily = row
 
     return StockDetailResponse(
         ts_code=stock.ts_code,
@@ -581,6 +601,8 @@ async def get_stock_detail(
         buy_elg_amount=float(moneyflow.buy_elg_amount) if moneyflow.buy_elg_amount else None,
         sell_elg_vol=float(moneyflow.sell_elg_vol) if moneyflow.sell_elg_vol else None,
         sell_elg_amount=float(moneyflow.sell_elg_amount) if moneyflow.sell_elg_amount else None,
+        selling=float(bak_daily.selling) if bak_daily and bak_daily.selling else None,
+        buying=float(bak_daily.buying) if bak_daily and bak_daily.buying else None,
     )
 
 

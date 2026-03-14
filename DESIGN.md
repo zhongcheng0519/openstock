@@ -125,7 +125,23 @@
 
 > **数据来源**: Tushare `moneyflow` 接口，数据开始于2010年，单次最大提取6000行记录，需要至少2000积分。
 
-#### 5. 用户表 (`users`)
+#### 5. 备用行情表 (`bak_daily`)
+
+存储 Tushare `bak_daily` 接口的补充行情数据，主要为内盘/外盘信息。
+
+| **字段名**   | **类型**       | **说明**                        |
+| ------------ | -------------- | ------------------------------- |
+| id           | BigInt         | **主键** (自增)                 |
+| ts_code      | String(20)     | **外键/索引**，股票代码         |
+| trade_date   | Date           | **索引**，交易日期 (YYYY-MM-DD) |
+| selling      | Numeric(18, 4) | 内盘（主动卖，手）              |
+| buying       | Numeric(18, 4) | 外盘（主动买，手）              |
+
+> **设计说明**: `ts_code` + `trade_date` 组成联合唯一索引。使用 `outerjoin` 查询，因为 `bak_daily` 数据从2017年中左右开始，早期数据可能缺失。
+
+> **数据来源**: Tushare `bak_daily` 接口，单次最大7000行，正式权限需要5000积分。
+
+#### 6. 用户表 (`users`)
 
 存储系统用户信息，支持管理员和普通用户角色。
 
@@ -150,7 +166,7 @@
 > - 昵称为必填项，用于界面显示用户名称
 > - 手机号为选填项，需验证格式（11位数字）
 
-#### 6. 用户操作日志表 (`user_logs`)
+#### 7. 用户操作日志表 (`user_logs`)
 
 记录用户的所有操作行为，供管理员审计。
 
@@ -172,7 +188,7 @@
 > - 敏感参数（如密码）需脱敏后存储
 > - 按时间索引支持快速查询历史记录
 
-#### 7. 交易日历表 (`trade_calendar`)
+#### 8. 交易日历表 (`trade_calendar`)
 
 存储各大交易所的交易日历数据，用于判断某日是否为交易日。
 
@@ -223,6 +239,11 @@
    - `Check`: `SELECT EXISTS(SELECT 1 FROM moneyflow WHERE trade_date = D)`。
    - `Missing`: 调用 Tushare `moneyflow(trade_date=D)` 获取全量 $\rightarrow$ 批量入库 (`bulk_insert`)。
    - 策略筛选时，与 `daily_hq`、`daily_basic` 表联合查询，支持按净流入额排序。
+5. **备用行情数据 (On-Demand)**:
+   - 用户请求 $D$ 日策略筛选或股票详情时，同步内盘/外盘数据。
+   - `Check`: `SELECT EXISTS(SELECT 1 FROM bak_daily WHERE trade_date = D)`。
+   - `Missing`: 调用 Tushare `bak_daily(trade_date=D, fields='ts_code,trade_date,selling,buying')` $\rightarrow$ 批量入库。
+   - 使用 `outerjoin` 查询，兼容早期无数据的情况。
 
 ## 6. API 接口定义
 
